@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -56,6 +57,22 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application) *tview.Grid
 
 	usdCashValue := tview.NewTextView()
 	usdCashValue.SetText("USD Cash: xxxx")
+
+	table := tview.NewTable()
+	table.SetBorders(true)
+
+	// Set up header columns
+	table.SetCell(0, 0, tview.NewTableCell("STOCK"))
+	table.SetCell(0, 1, tview.NewTableCell("PRICE"))
+	table.SetCell(0, 2, tview.NewTableCell("POS"))
+	table.SetCell(0, 3, tview.NewTableCell("P/L"))
+
+	// Create rows with data
+	for r := 1; r < 100; r++ {
+		for c := 0; c < 4; c++ {
+			table.SetCell(r, c, tview.NewTableCell("test"+" "+strconv.Itoa(r)))
+		}
+	}
 
 	//===================================
 
@@ -135,14 +152,21 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application) *tview.Grid
 	leftMiddleFlex.AddItem(unrealizedPLValue, 0, 1, false)
 	leftMiddleFlex.AddItem(cashBalancesFlex, 0, 2, false)
 
-	box2 := tview.NewBox().SetBorder(true).SetTitle("3")
-	box4 := tview.NewBox().SetBorder(true).SetTitle("4")
+	rightMiddleFlex := tview.NewFlex()
+	rightMiddleFlex.SetBorder(true)
+	rightMiddleFlex.SetDirection(tview.FlexRow)
+
+	rightMiddleFlex.AddItem(table, 0, 1, false)
+
+	bottomFlex := tview.NewFlex()
+	bottomFlex.SetBorder(true)
+	bottomFlex.SetTitle("Navigation")
 
 	// page.AddItem()
 	page.AddItem(topFlex, 0, 0, 1, 3, 0, 0, true)
 	page.AddItem(leftMiddleFlex, 1, 0, 1, 1, 0, 0, false)
-	page.AddItem(box2, 1, 1, 1, 2, 0, 0, false)
-	page.AddItem(box4, 2, 0, 1, 3, 0, 0, false)
+	page.AddItem(rightMiddleFlex, 1, 1, 1, 2, 0, 0, false)
+	page.AddItem(bottomFlex, 2, 0, 1, 3, 0, 0, false)
 
 	var selected int8
 
@@ -155,6 +179,9 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application) *tview.Grid
 			} else if selected == 1 {
 				selected = 2
 				app.SetFocus(sellButton)
+			} else if selected == 2 {
+				selected = 3
+				app.SetFocus(table)
 			} else {
 				selected = 0
 				app.SetFocus(dropDown)
