@@ -36,36 +36,112 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application) *tview.Grid
 	page.SetBorder(true)
 	page.SetTitle("Portfolio")
 	page.SetRows(3, 0, 3)
-	page.SetColumns(30, 0, 30)
+	page.SetColumns(0, 0, 0)
+
+	// Set these up before the dropdown so you can use them in the selected func
+	accountType := tview.NewTextView()
+	accountType.SetText("Account: All")
+
+	marketValue := tview.NewTextView()
+	marketValue.SetText("Market Value: ")
+
+	unrealizedPLValue := tview.NewTextView()
+	unrealizedPLValue.SetText("Unrealized P/L: xxxx")
+
+	realizedPLValue := tview.NewTextView()
+	realizedPLValue.SetText("Realized P/L: xxxx")
+
+	cadCashValue := tview.NewTextView()
+	cadCashValue.SetText("CAD Cash: xxxx")
+
+	usdCashValue := tview.NewTextView()
+	usdCashValue.SetText("USD Cash: xxxx")
+
+	//===================================
 
 	topFlex := tview.NewFlex()
 	topFlex.SetDirection(tview.FlexColumn)
 
 	dropDown := tview.NewDropDown()
 	dropDown.SetBorder(true)
-	dropDown.AddOption("All Accounts", func() { fmt.Println("all accounts") })
-	dropDown.AddOption("Margin", func() { fmt.Println("margin") })
-	dropDown.AddOption("TFSA", func() { fmt.Println("TFSA") })
-	dropDown.AddOption("RRSP", func() { fmt.Println("RRSP") })
 
+	dropDown.AddOption("All Accounts", func() {
+		accountType.SetText("Account: All")
+		marketValue.SetText("Market Value: 200000")
+		unrealizedPLValue.SetText("Unrealized P/L: 1000")
+		realizedPLValue.SetText("Realized P/L: 5000")
+		cadCashValue.SetText("CAD Cash: 800")
+		usdCashValue.SetText("USD Cash: 800")
+	})
+	dropDown.AddOption("Margin", func() {
+		accountType.SetText("Account: Margin")
+		marketValue.SetText("Market Value: 50000")
+		unrealizedPLValue.SetText("Unrealized P/L: 500")
+		realizedPLValue.SetText("Realized P/L: 3000")
+		cadCashValue.SetText("CAD Cash: 500")
+		usdCashValue.SetText("USD Cash: 500")
+	})
+	dropDown.AddOption("TFSA", func() {
+		accountType.SetText("Account: TFSA")
+		marketValue.SetText("Market Value: 100000")
+		unrealizedPLValue.SetText("Unrealized P/L: 200")
+		realizedPLValue.SetText("Realized P/L: 1000")
+		cadCashValue.SetText("CAD Cash: 200")
+		usdCashValue.SetText("USD Cash: 200")
+	})
+	dropDown.AddOption("RRSP", func() {
+		accountType.SetText("Account: RRSP")
+		marketValue.SetText("Market Value: 50000")
+		unrealizedPLValue.SetText("Unrealized P/L: 300")
+		realizedPLValue.SetText("Realized P/L: 1000")
+		cadCashValue.SetText("CAD Cash: 100")
+		usdCashValue.SetText("USD Cash: 100")
+	})
+	dropDown.SetCurrentOption(0)
+
+	// Buttons
 	buyButton := tview.NewButton("Buy").SetSelectedFunc(func() {
 		fmt.Println("Buy")
 	})
 
-	topFlex.AddItem(dropDown, 0, 1, true)
-	topFlex.AddItem(buyButton, 0, 1, false)
+	sellButton := tview.NewButton("Sell").SetSelectedFunc(func() {
+		fmt.Println("Sell")
+	})
 
-	// Create boxes for the other rows
-	box1 := tview.NewBox().SetBorder(true).SetTitle("Row 2")
-	box2 := tview.NewBox().SetBorder(true).SetTitle("Row 3")
-	box3 := tview.NewBox().SetBorder(true).SetTitle("Row 3")
-	box4 := tview.NewBox().SetBorder(true).SetTitle("Row 3")
+	topFlex.AddItem(dropDown, 0, 2, true)
+	topFlex.AddItem(tview.NewBox(), 20, 0, false)
+	topFlex.AddItem(buyButton, 0, 1, false)
+	topFlex.AddItem(tview.NewBox(), 5, 0, false)
+	topFlex.AddItem(sellButton, 0, 1, false)
+	topFlex.AddItem(tview.NewBox(), 1, 0, false)
+
+	// Left middle flex layout
+	leftMiddleFlex := tview.NewFlex()
+	leftMiddleFlex.SetBorder(true)
+	leftMiddleFlex.SetTitle("2")
+	leftMiddleFlex.SetDirection(tview.FlexRow)
+
+	cashBalancesFlex := tview.NewFlex()
+	cashBalancesFlex.SetBorder(true)
+	cashBalancesFlex.SetTitle("Cash Balances")
+	cashBalancesFlex.SetDirection(tview.FlexRow)
+
+	cashBalancesFlex.AddItem(cadCashValue, 0, 1, false)
+	cashBalancesFlex.AddItem(usdCashValue, 0, 1, false)
+
+	leftMiddleFlex.AddItem(accountType, 0, 1, false)
+	leftMiddleFlex.AddItem(marketValue, 0, 1, false)
+	leftMiddleFlex.AddItem(realizedPLValue, 0, 1, false)
+	leftMiddleFlex.AddItem(unrealizedPLValue, 0, 1, false)
+	leftMiddleFlex.AddItem(cashBalancesFlex, 0, 2, false)
+
+	box2 := tview.NewBox().SetBorder(true).SetTitle("3")
+	box4 := tview.NewBox().SetBorder(true).SetTitle("4")
 
 	// page.AddItem()
 	page.AddItem(topFlex, 0, 0, 1, 3, 0, 0, true)
-	page.AddItem(box1, 1, 0, 1, 1, 0, 100, false)
-	page.AddItem(box2, 1, 1, 1, 1, 0, 100, false)
-	page.AddItem(box3, 1, 2, 1, 1, 0, 100, false)
+	page.AddItem(leftMiddleFlex, 1, 0, 1, 1, 0, 0, false)
+	page.AddItem(box2, 1, 1, 1, 2, 0, 0, false)
 	page.AddItem(box4, 2, 0, 1, 3, 0, 0, false)
 
 	var selected int8
@@ -76,6 +152,9 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application) *tview.Grid
 			if selected == 0 {
 				selected = 1
 				app.SetFocus(buyButton)
+			} else if selected == 1 {
+				selected = 2
+				app.SetFocus(sellButton)
 			} else {
 				selected = 0
 				app.SetFocus(dropDown)
