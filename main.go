@@ -11,7 +11,7 @@ func main() {
 	// Home page
 	homePage := createHomePage(pages, func() { app.Stop() })
 	// Portfolio Page
-	portfolioPage := createPortfolioPage(pages)
+	portfolioPage := createPortfolioPage(pages, app)
 	// Add Funds Page
 	fundsPage := createFundsPage(pages)
 	fundsMarginPage := createFundsMarginPage(pages)
