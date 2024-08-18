@@ -13,12 +13,27 @@ import (
 // Set up types
 type Fn func()
 
-func createHomePage(pages *tview.Pages, quitFunc Fn) *tview.List {
+func createHomePage(pages *tview.Pages, quitFunc Fn, appPrimitives AppPrimitives) *tview.List {
 	homePage := tview.NewList()
 	homePage.SetBorder(true)
 	homePage.SetTitle("Main Menu")
 
 	homePage.AddItem("Portolio", "Some explanatory text", 'a', func() {
+		db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
+		if err != nil {
+			panic("failed to connect database")
+		}
+
+		// Get all accounts and add them up
+		var account1 Account
+		var account2 Account
+		var account3 Account
+		db.First(&account1, 1)
+		db.First(&account2, 2)
+		db.First(&account3, 3)
+
+		updateAppCashCadBalances(appPrimitives, account1.CadBalance+account2.CadBalance+account3.CadBalance)
+		updateAppCashUsdBalances(appPrimitives, account1.UsdBalance+account2.UsdBalance+account3.UsdBalance)
 		pages.SwitchToPage("portfolio")
 	})
 	homePage.AddItem("Funds", "Some explanatory text", 'b', func() {
@@ -34,12 +49,17 @@ func createHomePage(pages *tview.Pages, quitFunc Fn) *tview.List {
 	return homePage
 }
 
-func createPortfolioPage(pages *tview.Pages, app *tview.Application) *tview.Grid {
+func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitives AppPrimitives) *tview.Grid {
 	page := tview.NewGrid()
 	page.SetBorder(true)
 	page.SetTitle("Portfolio")
 	page.SetRows(3, 0, 3)
 	page.SetColumns(0, 0, 0)
+
+	db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
 
 	// Set these up before the dropdown so you can use them in the selected func
 	accountType := tview.NewTextView()
@@ -53,12 +73,6 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application) *tview.Grid
 
 	realizedPLValue := tview.NewTextView()
 	realizedPLValue.SetText("Realized P/L: xxxx")
-
-	cadCashValue := tview.NewTextView()
-	cadCashValue.SetText("CAD Cash: xxxx")
-
-	usdCashValue := tview.NewTextView()
-	usdCashValue.SetText("USD Cash: xxxx")
 
 	table := tview.NewTable()
 	table.SetBorders(true)
@@ -89,32 +103,57 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application) *tview.Grid
 		marketValue.SetText("Market Value: 200000")
 		unrealizedPLValue.SetText("Unrealized P/L: 1000")
 		realizedPLValue.SetText("Realized P/L: 5000")
-		cadCashValue.SetText("CAD Cash: 800")
-		usdCashValue.SetText("USD Cash: 800")
+
+		// Get all accounts and add them up
+		var account1 Account
+		var account2 Account
+		var account3 Account
+		db.First(&account1, 1)
+		db.First(&account2, 2)
+		db.First(&account3, 3)
+
+		updateAppCashCadBalances(appPrimitives, account1.CadBalance+account2.CadBalance+account3.CadBalance)
+		updateAppCashUsdBalances(appPrimitives, account1.UsdBalance+account2.UsdBalance+account3.UsdBalance)
+
 	})
 	dropDown.AddOption("Margin", func() {
 		accountType.SetText("Account: Margin")
 		marketValue.SetText("Market Value: 50000")
 		unrealizedPLValue.SetText("Unrealized P/L: 500")
 		realizedPLValue.SetText("Realized P/L: 3000")
-		cadCashValue.SetText("CAD Cash: 500")
-		usdCashValue.SetText("USD Cash: 500")
+
+		// Get margin account
+		var account Account
+		db.First(&account, 1)
+
+		updateAppCashCadBalances(appPrimitives, account.CadBalance)
+		updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
 	})
 	dropDown.AddOption("TFSA", func() {
 		accountType.SetText("Account: TFSA")
 		marketValue.SetText("Market Value: 100000")
 		unrealizedPLValue.SetText("Unrealized P/L: 200")
 		realizedPLValue.SetText("Realized P/L: 1000")
-		cadCashValue.SetText("CAD Cash: 200")
-		usdCashValue.SetText("USD Cash: 200")
+
+		// Get tfsa account
+		var account Account
+		db.First(&account, 2)
+
+		updateAppCashCadBalances(appPrimitives, account.CadBalance)
+		updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
 	})
 	dropDown.AddOption("RRSP", func() {
 		accountType.SetText("Account: RRSP")
 		marketValue.SetText("Market Value: 50000")
 		unrealizedPLValue.SetText("Unrealized P/L: 300")
 		realizedPLValue.SetText("Realized P/L: 1000")
-		cadCashValue.SetText("CAD Cash: 100")
-		usdCashValue.SetText("USD Cash: 100")
+
+		// Get tfsa account
+		var account Account
+		db.First(&account, 3)
+
+		updateAppCashCadBalances(appPrimitives, account.CadBalance)
+		updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
 	})
 	dropDown.SetCurrentOption(0)
 
@@ -145,8 +184,8 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application) *tview.Grid
 	cashBalancesFlex.SetTitle("Cash Balances")
 	cashBalancesFlex.SetDirection(tview.FlexRow)
 
-	cashBalancesFlex.AddItem(cadCashValue, 0, 1, false)
-	cashBalancesFlex.AddItem(usdCashValue, 0, 1, false)
+	cashBalancesFlex.AddItem(appPrimitives.PortfolioCadTextView, 0, 1, false)
+	cashBalancesFlex.AddItem(appPrimitives.PortfolioUsdTextView, 0, 1, false)
 
 	leftMiddleFlex.AddItem(accountType, 0, 1, false)
 	leftMiddleFlex.AddItem(marketValue, 0, 1, false)
@@ -220,20 +259,33 @@ func createFundsPage(pages *tview.Pages) *tview.List {
 	return fundsPage
 }
 
-func createFundsMarginPage(pages *tview.Pages) *tview.List {
+func createFundsMarginPage(pages *tview.Pages, appPrimitives AppPrimitives) *tview.List {
 	page := tview.NewList()
 	page.SetBorder(true)
 	page.SetTitle("Funds Margin")
 
 	page.AddItem("Deposit", "Add funds to your margin account", 'a', func() { pages.SwitchToPage("fundsMarginDeposit") })
-	page.AddItem("Withdraw", "Remove funds to your margin account", 'b', func() { pages.SwitchToPage("fundsMarginWithdraw") })
+	page.AddItem("Withdraw", "Remove funds to your margin account", 'b', func() {
+
+		db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
+		if err != nil {
+			panic("failed to connect database")
+		}
+
+		var account Account
+		db.First(&account, 1)
+
+		updateAppCashCadBalances(appPrimitives, account.CadBalance)
+		updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
+		pages.SwitchToPage("fundsMarginWithdraw")
+	})
 	page.AddItem("Go back", "Press to go back", 'q', func() { pages.SwitchToPage("funds") })
 
 	return page
 
 }
 
-func createFundsMarginDepositPage(pages *tview.Pages, cadTextView *tview.TextView, usdTextView *tview.TextView) *tview.Form {
+func createFundsMarginDepositPage(pages *tview.Pages, appPrimitives AppPrimitives) *tview.Form {
 	page := tview.NewForm()
 	page.SetBorder(true)
 	page.SetTitle("Deposit Funds Margin")
@@ -270,11 +322,11 @@ func createFundsMarginDepositPage(pages *tview.Pages, cadTextView *tview.TextVie
 			if selectedCurrency == "cad" {
 				var newBalance float64 = account.CadBalance + amount
 				account.CadBalance = newBalance
-				cadTextView.SetText(fmt.Sprintf("Balance CAD: %.2f", newBalance))
+				updateAppCashCadBalances(appPrimitives, newBalance)
 			} else {
 				var newBalance float64 = account.UsdBalance + amount
 				account.UsdBalance = newBalance
-				usdTextView.SetText(fmt.Sprintf("Balance USD: %.2f", newBalance))
+				updateAppCashUsdBalances(appPrimitives, newBalance)
 			}
 
 			// Save the updated record
@@ -295,7 +347,7 @@ func createFundsMarginDepositPage(pages *tview.Pages, cadTextView *tview.TextVie
 	return page
 }
 
-func createFundsMarginWithdrawPage(pages *tview.Pages, app *tview.Application, cadTextView *tview.TextView, usdTextView *tview.TextView) *tview.Flex {
+func createFundsMarginWithdrawPage(pages *tview.Pages, app *tview.Application, appPrimitives AppPrimitives) *tview.Flex {
 	page := tview.NewFlex()
 	page.SetBorder(true)
 	page.SetTitle("Withdraw Funds Margin")
@@ -305,20 +357,13 @@ func createFundsMarginWithdrawPage(pages *tview.Pages, app *tview.Application, c
 	balanceFlex.SetBorder(false)
 	balanceFlex.SetDirection(tview.FlexRow)
 
-	// query db for balances
 	db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
 	}
 
-	var account Account
-	db.First(&account, 1)
-
-	cadTextView.SetText(fmt.Sprintf("Balance CAD: %.2f", account.CadBalance))
-	usdTextView.SetText(fmt.Sprintf("Balance USD: %.2f", account.UsdBalance))
-
-	balanceFlex.AddItem(cadTextView, 0, 1, false)
-	balanceFlex.AddItem(usdTextView, 0, 1, false)
+	balanceFlex.AddItem(appPrimitives.FundsCadTextView, 0, 1, false)
+	balanceFlex.AddItem(appPrimitives.FundsUsdTextView, 0, 1, false)
 
 	var selectedCurrency string = ""
 	var selectedCurrencyId int
@@ -355,7 +400,7 @@ func createFundsMarginWithdrawPage(pages *tview.Pages, app *tview.Application, c
 				account.CadBalance = newBalance
 
 				if newBalance >= 0 {
-					cadTextView.SetText(fmt.Sprintf("Balance CAD: %.2f", newBalance))
+					updateAppCashCadBalances(appPrimitives, newBalance)
 				}
 
 			} else {
@@ -363,7 +408,7 @@ func createFundsMarginWithdrawPage(pages *tview.Pages, app *tview.Application, c
 				account.UsdBalance = newBalance
 
 				if newBalance >= 0 {
-					usdTextView.SetText(fmt.Sprintf("Balance USD: %.2f", newBalance))
+					updateAppCashUsdBalances(appPrimitives, newBalance)
 				}
 			}
 

@@ -57,6 +57,13 @@ type Trade struct {
 	Currency   Currency `gorm:"foreignKey:CurrencyID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
 
+type AppPrimitives struct {
+	FundsCadTextView     *tview.TextView
+	FundsUsdTextView     *tview.TextView
+	PortfolioCadTextView *tview.TextView
+	PortfolioUsdTextView *tview.TextView
+}
+
 func main() {
 
 	// Set up db
@@ -85,19 +92,23 @@ func main() {
 	app := tview.NewApplication()
 	pages := tview.NewPages()
 
-	//funds widgets
-	cadTextView := tview.NewTextView()
-	usdTextView := tview.NewTextView()
+	// Hold primitives that can be passed around the app
+	appPrimitives := AppPrimitives{
+		FundsCadTextView:     tview.NewTextView(),
+		FundsUsdTextView:     tview.NewTextView(),
+		PortfolioCadTextView: tview.NewTextView(),
+		PortfolioUsdTextView: tview.NewTextView(),
+	}
 
 	// Home page
-	homePage := createHomePage(pages, func() { app.Stop() })
+	homePage := createHomePage(pages, func() { app.Stop() }, appPrimitives)
 	// Portfolio Page
-	portfolioPage := createPortfolioPage(pages, app)
+	portfolioPage := createPortfolioPage(pages, app, appPrimitives)
 	// Add Funds Page
 	fundsPage := createFundsPage(pages)
-	fundsMarginPage := createFundsMarginPage(pages)
-	fundsMarginDepositPage := createFundsMarginDepositPage(pages, cadTextView, usdTextView)
-	fundsMarginWithdrawPage := createFundsMarginWithdrawPage(pages, app, cadTextView, usdTextView)
+	fundsMarginPage := createFundsMarginPage(pages, appPrimitives)
+	fundsMarginDepositPage := createFundsMarginDepositPage(pages, appPrimitives)
+	fundsMarginWithdrawPage := createFundsMarginWithdrawPage(pages, app, appPrimitives)
 	fundsTfsaPage := createFundsTfsaPage(pages)
 	fundsRrspPage := createFundsRrspPage(pages)
 	// Statisitcs Page
