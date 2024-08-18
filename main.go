@@ -85,6 +85,10 @@ func main() {
 	app := tview.NewApplication()
 	pages := tview.NewPages()
 
+	//funds widgets
+	cadTextView := tview.NewTextView()
+	usdTextView := tview.NewTextView()
+
 	// Home page
 	homePage := createHomePage(pages, func() { app.Stop() })
 	// Portfolio Page
@@ -92,7 +96,8 @@ func main() {
 	// Add Funds Page
 	fundsPage := createFundsPage(pages)
 	fundsMarginPage := createFundsMarginPage(pages)
-	fundsMarginDepositPage := createFundsMarginDepositPage(pages)
+	fundsMarginDepositPage := createFundsMarginDepositPage(pages, cadTextView, usdTextView)
+	fundsMarginWithdrawPage := createFundsMarginWithdrawPage(pages, app, cadTextView, usdTextView)
 	fundsTfsaPage := createFundsTfsaPage(pages)
 	fundsRrspPage := createFundsRrspPage(pages)
 	// Statisitcs Page
@@ -104,6 +109,7 @@ func main() {
 	pages.AddPage("funds", fundsPage, true, false)
 	pages.AddPage("fundsMargin", fundsMarginPage, true, false)
 	pages.AddPage("fundsMarginDeposit", fundsMarginDepositPage, true, false)
+	pages.AddPage("fundsMarginWithdraw", fundsMarginWithdrawPage, true, false)
 	pages.AddPage("fundsTfsa", fundsTfsaPage, true, false)
 	pages.AddPage("fundsRrsp", fundsRrspPage, true, false)
 	pages.AddPage("statistics", statisticsPage, true, false)

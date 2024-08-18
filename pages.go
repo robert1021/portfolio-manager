@@ -226,14 +226,14 @@ func createFundsMarginPage(pages *tview.Pages) *tview.List {
 	page.SetTitle("Funds Margin")
 
 	page.AddItem("Deposit", "Add funds to your margin account", 'a', func() { pages.SwitchToPage("fundsMarginDeposit") })
-	page.AddItem("Withdraw", "Remove funds to your margin account", 'b', func() { pages.SwitchToPage("funds") })
+	page.AddItem("Withdraw", "Remove funds to your margin account", 'b', func() { pages.SwitchToPage("fundsMarginWithdraw") })
 	page.AddItem("Go back", "Press to go back", 'q', func() { pages.SwitchToPage("funds") })
 
 	return page
 
 }
 
-func createFundsMarginDepositPage(pages *tview.Pages) *tview.Form {
+func createFundsMarginDepositPage(pages *tview.Pages, cadTextView *tview.TextView, usdTextView *tview.TextView) *tview.Form {
 	page := tview.NewForm()
 	page.SetBorder(true)
 	page.SetTitle("Deposit Funds Margin")
@@ -250,9 +250,7 @@ func createFundsMarginDepositPage(pages *tview.Pages) *tview.Form {
 			panic("failed to connect database")
 		}
 
-		// Create transaction
 		amountStr := page.GetFormItemByLabel("Amount").(*tview.InputField).GetText()
-
 		amount, err := strconv.ParseFloat(amountStr, 64)
 
 		if selectedCurrency == "cad" {
@@ -261,6 +259,7 @@ func createFundsMarginDepositPage(pages *tview.Pages) *tview.Form {
 			selectedCurrencyId = 2
 		}
 
+		// Create transaction
 		if err == nil {
 			db.Create(&CashTransaction{Amount: amount, Type: "deposit", CurrencyID: selectedCurrencyId, AccountID: 1})
 
@@ -271,9 +270,11 @@ func createFundsMarginDepositPage(pages *tview.Pages) *tview.Form {
 			if selectedCurrency == "cad" {
 				var newBalance float64 = account.CadBalance + amount
 				account.CadBalance = newBalance
+				cadTextView.SetText(fmt.Sprintf("Balance CAD: %.2f", newBalance))
 			} else {
 				var newBalance float64 = account.UsdBalance + amount
 				account.UsdBalance = newBalance
+				usdTextView.SetText(fmt.Sprintf("Balance USD: %.2f", newBalance))
 			}
 
 			// Save the updated record
@@ -289,6 +290,113 @@ func createFundsMarginDepositPage(pages *tview.Pages) *tview.Form {
 	page.AddButton("Cancel", func() {
 		page.GetFormItemByLabel("Amount").(*tview.InputField).SetText("")
 		pages.SwitchToPage("fundsMargin")
+	})
+
+	return page
+}
+
+func createFundsMarginWithdrawPage(pages *tview.Pages, app *tview.Application, cadTextView *tview.TextView, usdTextView *tview.TextView) *tview.Flex {
+	page := tview.NewFlex()
+	page.SetBorder(true)
+	page.SetTitle("Withdraw Funds Margin")
+	page.SetDirection(tview.FlexRow)
+
+	balanceFlex := tview.NewFlex()
+	balanceFlex.SetBorder(false)
+	balanceFlex.SetDirection(tview.FlexRow)
+
+	// query db for balances
+	db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
+
+	var account Account
+	db.First(&account, 1)
+
+	cadTextView.SetText(fmt.Sprintf("Balance CAD: %.2f", account.CadBalance))
+	usdTextView.SetText(fmt.Sprintf("Balance USD: %.2f", account.UsdBalance))
+
+	balanceFlex.AddItem(cadTextView, 0, 1, false)
+	balanceFlex.AddItem(usdTextView, 0, 1, false)
+
+	var selectedCurrency string = ""
+	var selectedCurrencyId int
+
+	form := tview.NewForm()
+	form.SetBorder(true)
+
+	form.AddInputField("Amount", "", 20, nil, nil)
+	form.AddDropDown("Currency", []string{"cad", "usd"}, 0, func(option string, optionIndex int) { selectedCurrency = option })
+
+	form.AddButton("Save", func() {
+
+		amountStr := form.GetFormItemByLabel("Amount").(*tview.InputField).GetText()
+		amount, err := strconv.ParseFloat(amountStr, 64)
+
+		if selectedCurrency == "cad" {
+			selectedCurrencyId = 1
+		} else {
+			selectedCurrencyId = 2
+		}
+
+		// Create transaction
+		if err == nil {
+			db.Create(&CashTransaction{Amount: amount, Type: "withdraw", CurrencyID: selectedCurrencyId, AccountID: 1})
+
+			var account Account
+			db.First(&account, 1)
+
+			var newBalance float64
+
+			// Update account balance for specific currency
+			if selectedCurrency == "cad" {
+				newBalance = account.CadBalance - amount
+				account.CadBalance = newBalance
+
+				if newBalance >= 0 {
+					cadTextView.SetText(fmt.Sprintf("Balance CAD: %.2f", newBalance))
+				}
+
+			} else {
+				newBalance = account.UsdBalance - amount
+				account.UsdBalance = newBalance
+
+				if newBalance >= 0 {
+					usdTextView.SetText(fmt.Sprintf("Balance USD: %.2f", newBalance))
+				}
+			}
+
+			// Save the updated record
+			if newBalance >= 0 {
+				db.Save(&account)
+			}
+
+		}
+
+		form.GetFormItemByLabel("Amount").(*tview.InputField).SetText("")
+		pages.SwitchToPage("fundsMargin")
+	})
+
+	form.AddButton("Cancel", func() {
+		form.GetFormItemByLabel("Amount").(*tview.InputField).SetText("")
+		pages.SwitchToPage("fundsMargin")
+	})
+
+	page.AddItem(balanceFlex, 0, 1, false)
+	page.AddItem(form, 0, 4, false)
+
+	// Handle key presses -= Navigation
+	page.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyTab {
+			app.SetFocus(form)
+
+		} else if event.Key() == tcell.KeyRune && event.Rune() == 'q' {
+			pages.SwitchToPage("fundsMargin")
+		}
+
+		return event
+
 	})
 
 	return page
