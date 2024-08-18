@@ -6,6 +6,8 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 // Set up types
@@ -223,10 +225,73 @@ func createFundsMarginPage(pages *tview.Pages) *tview.List {
 	page.SetBorder(true)
 	page.SetTitle("Funds Margin")
 
+	page.AddItem("Deposit", "Add funds to your margin account", 'a', func() { pages.SwitchToPage("fundsMarginDeposit") })
+	page.AddItem("Withdraw", "Remove funds to your margin account", 'b', func() { pages.SwitchToPage("funds") })
 	page.AddItem("Go back", "Press to go back", 'q', func() { pages.SwitchToPage("funds") })
 
 	return page
 
+}
+
+func createFundsMarginDepositPage(pages *tview.Pages) *tview.Form {
+	page := tview.NewForm()
+	page.SetBorder(true)
+	page.SetTitle("Deposit Funds Margin")
+
+	var selectedCurrency string = ""
+	var selectedCurrencyId int
+
+	page.AddInputField("Amount", "", 20, nil, nil)
+	page.AddDropDown("Currency", []string{"cad", "usd"}, 0, func(option string, optionIndex int) { selectedCurrency = option })
+
+	page.AddButton("Save", func() {
+		db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
+		if err != nil {
+			panic("failed to connect database")
+		}
+
+		// Create transaction
+		amountStr := page.GetFormItemByLabel("Amount").(*tview.InputField).GetText()
+
+		amount, err := strconv.ParseFloat(amountStr, 64)
+
+		if selectedCurrency == "cad" {
+			selectedCurrencyId = 1
+		} else {
+			selectedCurrencyId = 2
+		}
+
+		if err == nil {
+			db.Create(&CashTransaction{Amount: amount, Type: "deposit", CurrencyID: selectedCurrencyId, AccountID: 1})
+
+			var account Account
+			db.First(&account, 1)
+
+			// Update account balance for specific currency
+			if selectedCurrency == "cad" {
+				var newBalance float64 = account.CadBalance + amount
+				account.CadBalance = newBalance
+			} else {
+				var newBalance float64 = account.UsdBalance + amount
+				account.UsdBalance = newBalance
+			}
+
+			// Save the updated record
+			db.Save(&account)
+
+		}
+
+		page.GetFormItemByLabel("Amount").(*tview.InputField).SetText("")
+		pages.SwitchToPage("fundsMargin")
+
+	})
+
+	page.AddButton("Cancel", func() {
+		page.GetFormItemByLabel("Amount").(*tview.InputField).SetText("")
+		pages.SwitchToPage("fundsMargin")
+	})
+
+	return page
 }
 
 func createFundsTfsaPage(pages *tview.Pages) *tview.List {
