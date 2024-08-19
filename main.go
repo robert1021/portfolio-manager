@@ -106,11 +106,15 @@ func main() {
 	portfolioPage := createPortfolioPage(pages, app, appPrimitives)
 	// Add Funds Page
 	fundsPage := createFundsPage(pages)
-	fundsMarginPage := createFundsMarginPage(pages, appPrimitives)
-	fundsMarginDepositPage := createFundsMarginDepositPage(pages, appPrimitives)
-	fundsMarginWithdrawPage := createFundsMarginWithdrawPage(pages, app, appPrimitives)
-	fundsTfsaPage := createFundsTfsaPage(pages)
-	fundsRrspPage := createFundsRrspPage(pages)
+	fundsMarginPage := createFundsTransactionTypePage(pages, appPrimitives, "Margin")
+	fundsMarginDepositPage := createFundsDepositPage(pages, appPrimitives, "Margin")
+	fundsMarginWithdrawPage := createFundsWithdrawPage(pages, app, appPrimitives, "Margin")
+	fundsTfsaPage := createFundsTransactionTypePage(pages, appPrimitives, "TFSA")
+	fundsTfsaDepositPage := createFundsDepositPage(pages, appPrimitives, "TFSA")
+	fundsTfsaWithdrawPage := createFundsWithdrawPage(pages, app, appPrimitives, "TFSA")
+	fundsRrspPage := createFundsTransactionTypePage(pages, appPrimitives, "RRSP")
+	fundsRrspDepositPage := createFundsDepositPage(pages, appPrimitives, "RRSP")
+	fundsRrspWithdrawPage := createFundsWithdrawPage(pages, app, appPrimitives, "RRSP")
 	// Statisitcs Page
 	statisticsPage := createStatisticsPage(pages)
 
@@ -122,7 +126,11 @@ func main() {
 	pages.AddPage("fundsMarginDeposit", fundsMarginDepositPage, true, false)
 	pages.AddPage("fundsMarginWithdraw", fundsMarginWithdrawPage, true, false)
 	pages.AddPage("fundsTfsa", fundsTfsaPage, true, false)
+	pages.AddPage("fundsTfsaDeposit", fundsTfsaDepositPage, true, false)
+	pages.AddPage("fundsTfsaWithdraw", fundsTfsaWithdrawPage, true, false)
 	pages.AddPage("fundsRrsp", fundsRrspPage, true, false)
+	pages.AddPage("fundsRrspDeposit", fundsRrspDepositPage, true, false)
+	pages.AddPage("fundsRrspWithdraw", fundsRrspWithdrawPage, true, false)
 	pages.AddPage("statistics", statisticsPage, true, false)
 
 	// Set the initial page to the home page

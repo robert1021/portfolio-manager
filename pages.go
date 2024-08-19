@@ -228,6 +228,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 				app.SetFocus(dropDown)
 			}
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 'q' {
+			dropDown.SetCurrentOption(0)
 			pages.SwitchToPage("home")
 		}
 
@@ -259,36 +260,61 @@ func createFundsPage(pages *tview.Pages) *tview.List {
 	return fundsPage
 }
 
-func createFundsMarginPage(pages *tview.Pages, appPrimitives AppPrimitives) *tview.List {
+func createFundsTransactionTypePage(pages *tview.Pages, appPrimitives AppPrimitives, title string) *tview.List {
 	page := tview.NewList()
 	page.SetBorder(true)
-	page.SetTitle("Funds Margin")
+	page.SetTitle(fmt.Sprintf("Funds %s", title))
 
-	page.AddItem("Deposit", "Add funds to your margin account", 'a', func() { pages.SwitchToPage("fundsMarginDeposit") })
-	page.AddItem("Withdraw", "Remove funds to your margin account", 'b', func() {
+	db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
 
-		db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
-		if err != nil {
-			panic("failed to connect database")
-		}
+	if title == "Margin" {
+		page.AddItem("Deposit", "Add funds to your margin account", 'a', func() { pages.SwitchToPage("fundsMarginDeposit") })
+		page.AddItem("Withdraw", "Remove funds to your margin account", 'b', func() {
 
-		var account Account
-		db.First(&account, 1)
+			var account Account
+			db.First(&account, 1)
 
-		updateAppCashCadBalances(appPrimitives, account.CadBalance)
-		updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
-		pages.SwitchToPage("fundsMarginWithdraw")
-	})
+			updateAppCashCadBalances(appPrimitives, account.CadBalance)
+			updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
+			pages.SwitchToPage("fundsMarginWithdraw")
+		})
+
+	} else if title == "TFSA" {
+		page.AddItem("Deposit", "Add funds to your TFSA account", 'a', func() { pages.SwitchToPage("fundsTfsaDeposit") })
+		page.AddItem("Withdraw", "Remove funds to your TFSA account", 'b', func() {
+
+			var account Account
+			db.First(&account, 2)
+
+			updateAppCashCadBalances(appPrimitives, account.CadBalance)
+			updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
+			pages.SwitchToPage("fundsTfsaWithdraw")
+		})
+
+	} else if title == "RRSP" {
+		page.AddItem("Deposit", "Add funds to your RRSP account", 'a', func() { pages.SwitchToPage("fundsRrspDeposit") })
+		page.AddItem("Withdraw", "Remove funds to your RRSP account", 'b', func() {
+
+			var account Account
+			db.First(&account, 3)
+
+			updateAppCashCadBalances(appPrimitives, account.CadBalance)
+			updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
+			pages.SwitchToPage("fundsRrspWithdraw")
+		})
+	}
+
 	page.AddItem("Go back", "Press to go back", 'q', func() { pages.SwitchToPage("funds") })
-
 	return page
-
 }
 
-func createFundsMarginDepositPage(pages *tview.Pages, appPrimitives AppPrimitives) *tview.Form {
+func createFundsDepositPage(pages *tview.Pages, appPrimitives AppPrimitives, title string) *tview.Form {
 	page := tview.NewForm()
 	page.SetBorder(true)
-	page.SetTitle("Deposit Funds Margin")
+	page.SetTitle(fmt.Sprintf("Deposit Funds %s", title))
 
 	var selectedCurrency string = ""
 	var selectedCurrencyId int
@@ -311,12 +337,23 @@ func createFundsMarginDepositPage(pages *tview.Pages, appPrimitives AppPrimitive
 			selectedCurrencyId = 2
 		}
 
+		var accountId int
+
+		// Set the proper account ID based on the title
+		if title == "Margin" {
+			accountId = 1
+		} else if title == "TFSA" {
+			accountId = 2
+		} else if title == "RRSP" {
+			accountId = 3
+		}
+
 		// Create transaction
 		if err == nil {
-			db.Create(&CashTransaction{Amount: amount, Type: "deposit", CurrencyID: selectedCurrencyId, AccountID: 1})
+			db.Create(&CashTransaction{Amount: amount, Type: "deposit", CurrencyID: selectedCurrencyId, AccountID: accountId})
 
 			var account Account
-			db.First(&account, 1)
+			db.First(&account, accountId)
 
 			// Update account balance for specific currency
 			if selectedCurrency == "cad" {
@@ -335,22 +372,38 @@ func createFundsMarginDepositPage(pages *tview.Pages, appPrimitives AppPrimitive
 		}
 
 		page.GetFormItemByLabel("Amount").(*tview.InputField).SetText("")
-		pages.SwitchToPage("fundsMargin")
+
+		if title == "Margin" {
+			pages.SwitchToPage("fundsMargin")
+		} else if title == "TFSA" {
+			pages.SwitchToPage("fundsTfsa")
+		} else if title == "RRSP" {
+			pages.SwitchToPage("fundsRrsp")
+		}
 
 	})
 
 	page.AddButton("Cancel", func() {
 		page.GetFormItemByLabel("Amount").(*tview.InputField).SetText("")
-		pages.SwitchToPage("fundsMargin")
+
+		if title == "Margin" {
+			pages.SwitchToPage("fundsMargin")
+		} else if title == "TFSA" {
+			pages.SwitchToPage("fundsTfsa")
+		} else if title == "RRSP" {
+			pages.SwitchToPage("fundsRrsp")
+		}
 	})
 
 	return page
+
 }
 
-func createFundsMarginWithdrawPage(pages *tview.Pages, app *tview.Application, appPrimitives AppPrimitives) *tview.Flex {
+func createFundsWithdrawPage(pages *tview.Pages, app *tview.Application, appPrimitives AppPrimitives, title string) *tview.Flex {
+
 	page := tview.NewFlex()
 	page.SetBorder(true)
-	page.SetTitle("Withdraw Funds Margin")
+	page.SetTitle(fmt.Sprintf("Withdraw Funds %s", title))
 	page.SetDirection(tview.FlexRow)
 
 	balanceFlex := tview.NewFlex()
@@ -385,12 +438,22 @@ func createFundsMarginWithdrawPage(pages *tview.Pages, app *tview.Application, a
 			selectedCurrencyId = 2
 		}
 
+		var accountId int
+		// Set the proper account ID based on the title
+		if title == "Margin" {
+			accountId = 1
+		} else if title == "TFSA" {
+			accountId = 2
+		} else if title == "RRSP" {
+			accountId = 3
+		}
+
 		// Create transaction
 		if err == nil {
-			db.Create(&CashTransaction{Amount: amount, Type: "withdraw", CurrencyID: selectedCurrencyId, AccountID: 1})
+			db.Create(&CashTransaction{Amount: amount, Type: "withdraw", CurrencyID: selectedCurrencyId, AccountID: accountId})
 
 			var account Account
-			db.First(&account, 1)
+			db.First(&account, accountId)
 
 			var newBalance float64
 
@@ -420,12 +483,26 @@ func createFundsMarginWithdrawPage(pages *tview.Pages, app *tview.Application, a
 		}
 
 		form.GetFormItemByLabel("Amount").(*tview.InputField).SetText("")
-		pages.SwitchToPage("fundsMargin")
+
+		if title == "Margin" {
+			pages.SwitchToPage("fundsMargin")
+		} else if title == "TFSA" {
+			pages.SwitchToPage("fundsTfsa")
+		} else if title == "RRSP" {
+			pages.SwitchToPage("fundsRrsp")
+		}
 	})
 
 	form.AddButton("Cancel", func() {
 		form.GetFormItemByLabel("Amount").(*tview.InputField).SetText("")
-		pages.SwitchToPage("fundsMargin")
+
+		if title == "Margin" {
+			pages.SwitchToPage("fundsMargin")
+		} else if title == "TFSA" {
+			pages.SwitchToPage("fundsTfsa")
+		} else if title == "RRSP" {
+			pages.SwitchToPage("fundsRrsp")
+		}
 	})
 
 	page.AddItem(balanceFlex, 0, 1, false)
@@ -437,33 +514,19 @@ func createFundsMarginWithdrawPage(pages *tview.Pages, app *tview.Application, a
 			app.SetFocus(form)
 
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 'q' {
-			pages.SwitchToPage("fundsMargin")
+
+			if title == "Margin" {
+				pages.SwitchToPage("fundsMargin")
+			} else if title == "TFSA" {
+				pages.SwitchToPage("fundsTfsa")
+			} else if title == "RRSP" {
+				pages.SwitchToPage("fundsRrsp")
+			}
 		}
 
 		return event
 
 	})
-
-	return page
-}
-
-func createFundsTfsaPage(pages *tview.Pages) *tview.List {
-	page := tview.NewList()
-	page.SetBorder(true)
-	page.SetTitle("Funds TFSA")
-
-	page.AddItem("Go back", "Press to go back", 'q', func() { pages.SwitchToPage("funds") })
-
-	return page
-
-}
-
-func createFundsRrspPage(pages *tview.Pages) *tview.List {
-	page := tview.NewList()
-	page.SetBorder(true)
-	page.SetTitle("Funds RRSP")
-
-	page.AddItem("Go back", "Press to go back", 'q', func() { pages.SwitchToPage("funds") })
 
 	return page
 
