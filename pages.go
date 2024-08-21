@@ -69,9 +69,11 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	marketValue.SetText("Market Value: ")
 
 	unrealizedPLValue := tview.NewTextView()
+	unrealizedPLValue.SetDynamicColors(true)
 	unrealizedPLValue.SetText("Unrealized P/L: xxxx")
 
 	realizedPLValue := tview.NewTextView()
+	realizedPLValue.SetDynamicColors(true)
 	realizedPLValue.SetText("Realized P/L: xxxx")
 
 	table := tview.NewTable()
@@ -101,8 +103,8 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	dropDown.AddOption("All Accounts", func() {
 		accountType.SetText("Account: All")
 		marketValue.SetText("Market Value: 200000")
-		unrealizedPLValue.SetText("Unrealized P/L: 1000")
-		realizedPLValue.SetText("Realized P/L: 5000")
+		unrealizedPLValue.SetText("Unrealized P/L: [red]1000[white]")
+		realizedPLValue.SetText("Realized P/L: [green]5000[white]")
 
 		// Get all accounts and add them up
 		var account1 Account
@@ -119,8 +121,8 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	dropDown.AddOption("Margin", func() {
 		accountType.SetText("Account: Margin")
 		marketValue.SetText("Market Value: 50000")
-		unrealizedPLValue.SetText("Unrealized P/L: 500")
-		realizedPLValue.SetText("Realized P/L: 3000")
+		unrealizedPLValue.SetText("Unrealized P/L: [red]500[white]")
+		realizedPLValue.SetText("Realized P/L: [green]3000[white]")
 
 		// Get margin account
 		var account Account
@@ -132,8 +134,8 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	dropDown.AddOption("TFSA", func() {
 		accountType.SetText("Account: TFSA")
 		marketValue.SetText("Market Value: 100000")
-		unrealizedPLValue.SetText("Unrealized P/L: 200")
-		realizedPLValue.SetText("Realized P/L: 1000")
+		unrealizedPLValue.SetText("Unrealized P/L: [red]200[white]")
+		realizedPLValue.SetText("Realized P/L: [green]1000[white]")
 
 		// Get tfsa account
 		var account Account
@@ -145,8 +147,8 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	dropDown.AddOption("RRSP", func() {
 		accountType.SetText("Account: RRSP")
 		marketValue.SetText("Market Value: 50000")
-		unrealizedPLValue.SetText("Unrealized P/L: 300")
-		realizedPLValue.SetText("Realized P/L: 1000")
+		unrealizedPLValue.SetText("Unrealized P/L: [red]300[white]")
+		realizedPLValue.SetText("Realized P/L: [green]1000[white]")
 
 		// Get tfsa account
 		var account Account
@@ -159,11 +161,11 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 
 	// Buttons
 	buyButton := tview.NewButton("Buy").SetSelectedFunc(func() {
-		fmt.Println("Buy")
+		pages.SwitchToPage("portfolioBuy")
 	})
 
 	sellButton := tview.NewButton("Sell").SetSelectedFunc(func() {
-		fmt.Println("Sell")
+		pages.SwitchToPage("portfolioSell")
 	})
 
 	topFlex.AddItem(dropDown, 0, 2, true)
@@ -176,7 +178,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	// Left middle flex layout
 	leftMiddleFlex := tview.NewFlex()
 	leftMiddleFlex.SetBorder(true)
-	leftMiddleFlex.SetTitle("2")
+	leftMiddleFlex.SetTitle("Account Information")
 	leftMiddleFlex.SetDirection(tview.FlexRow)
 
 	cashBalancesFlex := tview.NewFlex()
@@ -202,6 +204,15 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	bottomFlex := tview.NewFlex()
 	bottomFlex.SetBorder(true)
 	bottomFlex.SetTitle("Navigation")
+	bottomFlex.SetDirection(tview.FlexColumn)
+
+	bottomFlex.AddItem(tview.NewTextView().SetDynamicColors(true).SetText("[yellow](tab)[white] Switch between items"), 0, 1, false)
+	bottomFlex.AddItem(tview.NewTextView().SetDynamicColors(true).SetText("[yellow](enter)[white] Select item"), 0, 1, false)
+	bottomFlex.AddItem(tview.NewTextView().SetDynamicColors(true).SetText("[yellow](a)[white] Select account"), 0, 1, false)
+	bottomFlex.AddItem(tview.NewTextView().SetDynamicColors(true).SetText("[yellow](b)[white] Buy stock"), 0, 1, false)
+	bottomFlex.AddItem(tview.NewTextView().SetDynamicColors(true).SetText("[yellow](s)[white] Sell stock"), 0, 1, false)
+	bottomFlex.AddItem(tview.NewTextView().SetDynamicColors(true).SetText("[yellow](t)[white] Select table"), 0, 1, false)
+	bottomFlex.AddItem(tview.NewTextView().SetDynamicColors(true).SetText("[yellow](q)[white] Back"), 0, 1, false)
 
 	// page.AddItem()
 	page.AddItem(topFlex, 0, 0, 1, 3, 0, 0, true)
@@ -230,10 +241,48 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 'q' {
 			dropDown.SetCurrentOption(0)
 			pages.SwitchToPage("home")
+		} else if event.Key() == tcell.KeyRune && event.Rune() == 'a' {
+			app.SetFocus(dropDown)
+		} else if event.Key() == tcell.KeyRune && event.Rune() == 'b' {
+			app.SetFocus(buyButton)
+		} else if event.Key() == tcell.KeyRune && event.Rune() == 's' {
+			app.SetFocus(sellButton)
+		} else if event.Key() == tcell.KeyRune && event.Rune() == 't' {
+			app.SetFocus(table)
 		}
 
 		return event
 
+	})
+
+	return page
+}
+
+func createPortfolioBuyPage(pages *tview.Pages, app *tview.Application, appPrimitives AppPrimitives) *tview.Form {
+	page := tview.NewForm()
+	page.SetBorder(true)
+	page.SetTitle("Buy")
+
+	page.AddButton("Buy", func() {
+
+	})
+	page.AddButton("Cancel", func() {
+		pages.SwitchToPage("portfolio")
+	})
+
+	return page
+}
+
+func createPortfolioSellPage(pages *tview.Pages, app *tview.Application, appPrimitives AppPrimitives) *tview.Form {
+	page := tview.NewForm()
+	page.SetBorder(true)
+	page.SetTitle("Sell")
+
+	page.AddButton("Sell", func() {
+
+	})
+	page.AddButton("Cancel", func() {
+		pages.SwitchToPage("portfolio")
 	})
 
 	return page

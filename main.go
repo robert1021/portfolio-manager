@@ -104,6 +104,8 @@ func main() {
 	homePage := createHomePage(pages, func() { app.Stop() }, appPrimitives)
 	// Portfolio Page
 	portfolioPage := createPortfolioPage(pages, app, appPrimitives)
+	portfolioBuyPage := createPortfolioBuyPage(pages, app, appPrimitives)
+	portfolioSellPage := createPortfolioSellPage(pages, app, appPrimitives)
 	// Add Funds Page
 	fundsPage := createFundsPage(pages)
 	fundsMarginPage := createFundsTransactionTypePage(pages, appPrimitives, "Margin")
@@ -121,6 +123,8 @@ func main() {
 	// Add pages to Pages
 	pages.AddPage("home", homePage, true, true)
 	pages.AddPage("portfolio", portfolioPage, true, false)
+	pages.AddPage("portfolioBuy", portfolioBuyPage, true, false)
+	pages.AddPage("portfolioSell", portfolioSellPage, true, false)
 	pages.AddPage("funds", fundsPage, true, false)
 	pages.AddPage("fundsMargin", fundsMarginPage, true, false)
 	pages.AddPage("fundsMarginDeposit", fundsMarginDepositPage, true, false)
