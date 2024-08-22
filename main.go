@@ -26,7 +26,7 @@ type Stock struct {
 	gorm.Model
 	Symbol     string   `gorm:"not null"`
 	Average    float64  `gorm:"not null"`
-	Postion    int      `gorm:"not null"`
+	Quantity   int      `gorm:"not null"`
 	CurrencyID int      // Foreign key to Currency
 	AccountID  int      // Foreign key to Account
 	Account    Account  `gorm:"foreignKey:AccountID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
@@ -48,7 +48,7 @@ type CashTransaction struct {
 type Trade struct {
 	gorm.Model
 	Symbol     string   `gorm:"not null"`
-	Quantity   float64  `gorm:"not null"`
+	Quantity   int      `gorm:"not null"`
 	Price      float64  `gorm:"not null"`
 	TradeType  string   `gorm:"not null"` // Type of trade: "buy" or "sell"
 	CurrencyID int      // Foreign key to Currency
@@ -62,6 +62,7 @@ type AppPrimitives struct {
 	FundsUsdTextView     *tview.TextView
 	PortfolioCadTextView *tview.TextView
 	PortfolioUsdTextView *tview.TextView
+	BuyStockModal        *tview.Modal
 }
 
 func main() {
@@ -98,6 +99,7 @@ func main() {
 		FundsUsdTextView:     tview.NewTextView(),
 		PortfolioCadTextView: tview.NewTextView(),
 		PortfolioUsdTextView: tview.NewTextView(),
+		BuyStockModal:        tview.NewModal(),
 	}
 
 	// Home page

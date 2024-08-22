@@ -245,8 +245,10 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 			app.SetFocus(dropDown)
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 'b' {
 			app.SetFocus(buyButton)
+			pages.SwitchToPage("portfolioBuy")
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 's' {
 			app.SetFocus(sellButton)
+			pages.SwitchToPage("portfolioSell")
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 't' {
 			app.SetFocus(table)
 		}
@@ -263,8 +265,93 @@ func createPortfolioBuyPage(pages *tview.Pages, app *tview.Application, appPrimi
 	page.SetBorder(true)
 	page.SetTitle("Buy")
 
-	page.AddButton("Buy", func() {
+	var selectedCurrency string = ""
+	var costStr string = ""
 
+	page.AddInputField("Stock", "", 20, nil, nil)
+	page.AddDropDown("Currency", []string{"cad", "usd"}, 0, func(option string, optionIndex int) { selectedCurrency = option })
+	page.AddInputField("Price", "", 20, nil, func(text string) {
+
+		priceStr := page.GetFormItemByLabel("Price").(*tview.InputField).GetText()
+		price, priceErr := strconv.ParseFloat(priceStr, 64)
+
+		sharesStr := page.GetFormItemByLabel("Quantity").(*tview.InputField).GetText()
+		shares, sharesErr := strconv.ParseFloat(sharesStr, 64)
+
+		if priceErr == nil && sharesErr == nil {
+			var amount float64 = shares * price
+			costStr = fmt.Sprintf("%f", amount)
+			page.GetFormItemByLabel("Cost").(*tview.TextView).SetText(costStr)
+
+		} else {
+			costStr = ""
+			page.GetFormItemByLabel("Cost").(*tview.TextView).SetText(costStr)
+		}
+
+	})
+	page.AddInputField("Quantity", "", 20, nil, func(text string) {
+
+		priceStr := page.GetFormItemByLabel("Price").(*tview.InputField).GetText()
+		price, priceErr := strconv.ParseFloat(priceStr, 64)
+
+		sharesStr := page.GetFormItemByLabel("Quantity").(*tview.InputField).GetText()
+		shares, sharesErr := strconv.ParseFloat(sharesStr, 64)
+
+		if priceErr == nil && sharesErr == nil {
+			var amount float64 = shares * price
+			costStr = fmt.Sprintf("%f", amount)
+			page.GetFormItemByLabel("Cost").(*tview.TextView).SetText(costStr)
+		} else {
+			costStr = ""
+			page.GetFormItemByLabel("Cost").(*tview.TextView).SetText(costStr)
+		}
+
+	})
+	page.AddTextView("Cost", "", 20, 2, true, false)
+
+	page.AddButton("Buy", func() {
+		var symbol string = page.GetFormItemByLabel("Stock").(*tview.InputField).GetText()
+		cost, costErr := strconv.ParseFloat(costStr, 64)
+		qunatity, quantityErr := strconv.Atoi(page.GetFormItemByLabel("Quantity").(*tview.InputField).GetText())
+		price, priceErr := strconv.ParseFloat(page.GetFormItemByLabel("Price").(*tview.InputField).GetText(), 64)
+
+		if costErr == nil && quantityErr == nil && symbol != "" && priceErr == nil {
+
+			db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
+			if err != nil {
+				panic("failed to connect database")
+			}
+
+			// TODO :
+			var account Account
+			db.First(&account, 1)
+
+			var newBalance float64
+			if selectedCurrency == "cad" {
+				newBalance = account.CadBalance - cost
+
+				if newBalance >= 0 {
+					account.CadBalance = newBalance
+					updateAppCashCadBalances(appPrimitives, newBalance)
+				}
+
+			} else if selectedCurrency == "usd" {
+				newBalance = account.UsdBalance - cost
+
+				if newBalance >= 0 {
+					account.UsdBalance = newBalance
+					updateAppCashUsdBalances(appPrimitives, newBalance)
+				}
+			}
+
+			// Save the updated record
+			if newBalance >= 0 {
+				db.Create(&Trade{Symbol: symbol, Quantity: qunatity, Price: price, TradeType: "buy", CurrencyID: getCurrencyIdFromString(selectedCurrency), AccountID: 1})
+				db.Save(&account)
+				pages.SwitchToPage("portfolio")
+			}
+
+		}
 	})
 	page.AddButton("Cancel", func() {
 		pages.SwitchToPage("portfolio")
@@ -366,7 +453,6 @@ func createFundsDepositPage(pages *tview.Pages, appPrimitives AppPrimitives, tit
 	page.SetTitle(fmt.Sprintf("Deposit Funds %s", title))
 
 	var selectedCurrency string = ""
-	var selectedCurrencyId int
 
 	page.AddInputField("Amount", "", 20, nil, nil)
 	page.AddDropDown("Currency", []string{"cad", "usd"}, 0, func(option string, optionIndex int) { selectedCurrency = option })
@@ -379,12 +465,6 @@ func createFundsDepositPage(pages *tview.Pages, appPrimitives AppPrimitives, tit
 
 		amountStr := page.GetFormItemByLabel("Amount").(*tview.InputField).GetText()
 		amount, err := strconv.ParseFloat(amountStr, 64)
-
-		if selectedCurrency == "cad" {
-			selectedCurrencyId = 1
-		} else {
-			selectedCurrencyId = 2
-		}
 
 		var accountId int
 
@@ -399,7 +479,7 @@ func createFundsDepositPage(pages *tview.Pages, appPrimitives AppPrimitives, tit
 
 		// Create transaction
 		if err == nil {
-			db.Create(&CashTransaction{Amount: amount, Type: "deposit", CurrencyID: selectedCurrencyId, AccountID: accountId})
+			db.Create(&CashTransaction{Amount: amount, Type: "deposit", CurrencyID: getCurrencyIdFromString(selectedCurrency), AccountID: accountId})
 
 			var account Account
 			db.First(&account, accountId)
@@ -468,7 +548,6 @@ func createFundsWithdrawPage(pages *tview.Pages, app *tview.Application, appPrim
 	balanceFlex.AddItem(appPrimitives.FundsUsdTextView, 0, 1, false)
 
 	var selectedCurrency string = ""
-	var selectedCurrencyId int
 
 	form := tview.NewForm()
 	form.SetBorder(true)
@@ -480,12 +559,6 @@ func createFundsWithdrawPage(pages *tview.Pages, app *tview.Application, appPrim
 
 		amountStr := form.GetFormItemByLabel("Amount").(*tview.InputField).GetText()
 		amount, err := strconv.ParseFloat(amountStr, 64)
-
-		if selectedCurrency == "cad" {
-			selectedCurrencyId = 1
-		} else {
-			selectedCurrencyId = 2
-		}
 
 		var accountId int
 		// Set the proper account ID based on the title
@@ -499,7 +572,6 @@ func createFundsWithdrawPage(pages *tview.Pages, app *tview.Application, appPrim
 
 		// Create transaction
 		if err == nil {
-			db.Create(&CashTransaction{Amount: amount, Type: "withdraw", CurrencyID: selectedCurrencyId, AccountID: accountId})
 
 			var account Account
 			db.First(&account, accountId)
@@ -526,6 +598,7 @@ func createFundsWithdrawPage(pages *tview.Pages, app *tview.Application, appPrim
 
 			// Save the updated record
 			if newBalance >= 0 {
+				db.Create(&CashTransaction{Amount: amount, Type: "withdraw", CurrencyID: getCurrencyIdFromString(selectedCurrency), AccountID: accountId})
 				db.Save(&account)
 			}
 
