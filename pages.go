@@ -266,9 +266,11 @@ func createPortfolioBuyPage(pages *tview.Pages, app *tview.Application, appPrimi
 	page.SetTitle("Buy")
 
 	var selectedCurrency string = ""
+	var selectedAccount string = ""
 	var costStr string = ""
 
 	page.AddInputField("Stock", "", 20, nil, nil)
+	page.AddDropDown("Account", []string{"Margin", "TFSA", "RRSP"}, 0, func(option string, optionIndex int) { selectedAccount = option })
 	page.AddDropDown("Currency", []string{"cad", "usd"}, 0, func(option string, optionIndex int) { selectedCurrency = option })
 	page.AddInputField("Price", "", 20, nil, func(text string) {
 
@@ -312,8 +314,11 @@ func createPortfolioBuyPage(pages *tview.Pages, app *tview.Application, appPrimi
 	page.AddButton("Buy", func() {
 		var symbol string = page.GetFormItemByLabel("Stock").(*tview.InputField).GetText()
 		cost, costErr := strconv.ParseFloat(costStr, 64)
-		qunatity, quantityErr := strconv.Atoi(page.GetFormItemByLabel("Quantity").(*tview.InputField).GetText())
+		quantity, quantityErr := strconv.Atoi(page.GetFormItemByLabel("Quantity").(*tview.InputField).GetText())
 		price, priceErr := strconv.ParseFloat(page.GetFormItemByLabel("Price").(*tview.InputField).GetText(), 64)
+
+		var selectedCurrencyId int = getCurrencyIdFromString(selectedCurrency)
+		var selectedAccountId int = getAccountIdFromString(selectedAccount)
 
 		if costErr == nil && quantityErr == nil && symbol != "" && priceErr == nil {
 
@@ -324,7 +329,7 @@ func createPortfolioBuyPage(pages *tview.Pages, app *tview.Application, appPrimi
 
 			// TODO :
 			var account Account
-			db.First(&account, 1)
+			db.First(&account, selectedAccountId)
 
 			var newBalance float64
 			if selectedCurrency == "cad" {
@@ -346,8 +351,27 @@ func createPortfolioBuyPage(pages *tview.Pages, app *tview.Application, appPrimi
 
 			// Save the updated record
 			if newBalance >= 0 {
-				db.Create(&Trade{Symbol: symbol, Quantity: qunatity, Price: price, TradeType: "buy", CurrencyID: getCurrencyIdFromString(selectedCurrency), AccountID: 1})
+				db.Create(&Trade{Symbol: symbol, Quantity: quantity, Price: price, TradeType: "buy", CurrencyID: selectedCurrencyId, AccountID: selectedAccountId})
 				db.Save(&account)
+
+				// Query for same stock in specific account to calculate average
+				var stock Stock
+				result := db.First(&stock, "symbol = ? AND account_id = ?", symbol, selectedAccountId)
+				// Update stock record or add new if none found
+				if result.RowsAffected != 0 {
+					var oldPurchaseValue float64 = float64(stock.Quantity) * stock.Average
+					var newPurchaseValue float64 = float64(quantity) * price
+					var newQuantity int = stock.Quantity + quantity
+					var newAverage float64 = (oldPurchaseValue + newPurchaseValue) / float64(newQuantity)
+					// Update stock record in db
+					stock.Average = newAverage
+					stock.Quantity = newQuantity
+					db.Save(&stock)
+
+				} else {
+					db.Create(&Stock{Symbol: symbol, Average: price, Quantity: quantity, CurrencyID: selectedCurrencyId, AccountID: selectedAccountId})
+				}
+
 				pages.SwitchToPage("portfolio")
 			}
 

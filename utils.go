@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 func updateAppCashCadBalances(appPrimitives AppPrimitives, balance float64) {
 	appPrimitives.FundsCadTextView.SetText(fmt.Sprintf("Balance CAD: %.2f", balance))
@@ -21,4 +24,20 @@ func getCurrencyIdFromString(selectedCurrency string) int {
 	}
 
 	return currencyId
+}
+
+func getAccountIdFromString(selectedAccount string) int {
+	var stringLower string = strings.ToLower(selectedAccount)
+	var accountId int
+
+	switch stringLower {
+	case "margin":
+		accountId = 1
+	case "tfsa":
+		accountId = 2
+	case "rrsp":
+		accountId = 3
+	}
+
+	return accountId
 }
