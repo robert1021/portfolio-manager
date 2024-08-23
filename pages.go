@@ -6,8 +6,6 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 // Set up types
@@ -19,10 +17,7 @@ func createHomePage(pages *tview.Pages, quitFunc Fn, appPrimitives AppPrimitives
 	homePage.SetTitle("Main Menu")
 
 	homePage.AddItem("Portolio", "Some explanatory text", 'a', func() {
-		db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
-		if err != nil {
-			panic("failed to connect database")
-		}
+		db := connectDb()
 
 		// Get all accounts and add them up
 		var account1 Account
@@ -34,13 +29,13 @@ func createHomePage(pages *tview.Pages, quitFunc Fn, appPrimitives AppPrimitives
 
 		updateAppCashCadBalances(appPrimitives, account1.CadBalance+account2.CadBalance+account3.CadBalance)
 		updateAppCashUsdBalances(appPrimitives, account1.UsdBalance+account2.UsdBalance+account3.UsdBalance)
-		pages.SwitchToPage("portfolio")
+		pages.SwitchToPage(portfolioPageName)
 	})
 	homePage.AddItem("Funds", "Some explanatory text", 'b', func() {
-		pages.SwitchToPage("funds")
+		pages.SwitchToPage(fundsPageName)
 	})
 	homePage.AddItem("Statistics", "Some explanatory text", 'c', func() {
-		pages.SwitchToPage("statistics")
+		pages.SwitchToPage(statisticsPageName)
 	})
 	homePage.AddItem("Quit", "Press to exit", 'q', func() {
 		quitFunc()
@@ -56,10 +51,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	page.SetRows(3, 0, 3)
 	page.SetColumns(0, 0, 0)
 
-	db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
+	db := connectDb()
 
 	// Set these up before the dropdown so you can use them in the selected func
 	accountType := tview.NewTextView()
@@ -161,11 +153,11 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 
 	// Buttons
 	buyButton := tview.NewButton("Buy").SetSelectedFunc(func() {
-		pages.SwitchToPage("portfolioBuy")
+		pages.SwitchToPage(portfolioBuyPageName)
 	})
 
 	sellButton := tview.NewButton("Sell").SetSelectedFunc(func() {
-		pages.SwitchToPage("portfolioSell")
+		pages.SwitchToPage(portfolioSellPageName)
 	})
 
 	topFlex.AddItem(dropDown, 0, 2, true)
@@ -240,15 +232,15 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 			}
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 'q' {
 			dropDown.SetCurrentOption(0)
-			pages.SwitchToPage("home")
+			pages.SwitchToPage(homePageName)
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 'a' {
 			app.SetFocus(dropDown)
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 'b' {
 			app.SetFocus(buyButton)
-			pages.SwitchToPage("portfolioBuy")
+			pages.SwitchToPage(portfolioBuyPageName)
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 's' {
 			app.SetFocus(sellButton)
-			pages.SwitchToPage("portfolioSell")
+			pages.SwitchToPage(portfolioSellPageName)
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 't' {
 			app.SetFocus(table)
 		}
@@ -321,13 +313,8 @@ func createPortfolioBuyPage(pages *tview.Pages, app *tview.Application, appPrimi
 		var selectedAccountId int = getAccountIdFromString(selectedAccount)
 
 		if costErr == nil && quantityErr == nil && symbol != "" && priceErr == nil {
+			db := connectDb()
 
-			db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
-			if err != nil {
-				panic("failed to connect database")
-			}
-
-			// TODO :
 			var account Account
 			db.First(&account, selectedAccountId)
 
@@ -372,13 +359,13 @@ func createPortfolioBuyPage(pages *tview.Pages, app *tview.Application, appPrimi
 					db.Create(&Stock{Symbol: symbol, Average: price, Quantity: quantity, CurrencyID: selectedCurrencyId, AccountID: selectedAccountId})
 				}
 
-				pages.SwitchToPage("portfolio")
+				pages.SwitchToPage(portfolioPageName)
 			}
 
 		}
 	})
 	page.AddButton("Cancel", func() {
-		pages.SwitchToPage("portfolio")
+		pages.SwitchToPage(portfolioPageName)
 	})
 
 	return page
@@ -393,7 +380,7 @@ func createPortfolioSellPage(pages *tview.Pages, app *tview.Application, appPrim
 
 	})
 	page.AddButton("Cancel", func() {
-		pages.SwitchToPage("portfolio")
+		pages.SwitchToPage(portfolioPageName)
 	})
 
 	return page
@@ -405,16 +392,16 @@ func createFundsPage(pages *tview.Pages) *tview.List {
 	fundsPage.SetTitle("Funds")
 
 	fundsPage.AddItem("Margin", "Some explanatory text", 'a', func() {
-		pages.SwitchToPage("fundsMargin")
+		pages.SwitchToPage(fundsMarginPageName)
 	})
 	fundsPage.AddItem("TFSA", "Some explanatory text", 'b', func() {
-		pages.SwitchToPage("fundsTfsa")
+		pages.SwitchToPage(fundsTfsaPageName)
 	})
 	fundsPage.AddItem("RRSP", "Some explanatory text", 'c', func() {
-		pages.SwitchToPage("fundsRrsp")
+		pages.SwitchToPage(fundsRrspPageName)
 	})
 	fundsPage.AddItem("Go back", "Press to go back", 'q', func() {
-		pages.SwitchToPage("home")
+		pages.SwitchToPage(homePageName)
 	})
 
 	return fundsPage
@@ -425,13 +412,10 @@ func createFundsTransactionTypePage(pages *tview.Pages, appPrimitives AppPrimiti
 	page.SetBorder(true)
 	page.SetTitle(fmt.Sprintf("Funds %s", title))
 
-	db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
+	db := connectDb()
 
 	if title == "Margin" {
-		page.AddItem("Deposit", "Add funds to your margin account", 'a', func() { pages.SwitchToPage("fundsMarginDeposit") })
+		page.AddItem("Deposit", "Add funds to your margin account", 'a', func() { pages.SwitchToPage(fundsMarginDepositPageName) })
 		page.AddItem("Withdraw", "Remove funds to your margin account", 'b', func() {
 
 			var account Account
@@ -439,11 +423,11 @@ func createFundsTransactionTypePage(pages *tview.Pages, appPrimitives AppPrimiti
 
 			updateAppCashCadBalances(appPrimitives, account.CadBalance)
 			updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
-			pages.SwitchToPage("fundsMarginWithdraw")
+			pages.SwitchToPage(fundsMarginWithdrawPageName)
 		})
 
 	} else if title == "TFSA" {
-		page.AddItem("Deposit", "Add funds to your TFSA account", 'a', func() { pages.SwitchToPage("fundsTfsaDeposit") })
+		page.AddItem("Deposit", "Add funds to your TFSA account", 'a', func() { pages.SwitchToPage(fundsTfsaDepositPageName) })
 		page.AddItem("Withdraw", "Remove funds to your TFSA account", 'b', func() {
 
 			var account Account
@@ -451,11 +435,11 @@ func createFundsTransactionTypePage(pages *tview.Pages, appPrimitives AppPrimiti
 
 			updateAppCashCadBalances(appPrimitives, account.CadBalance)
 			updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
-			pages.SwitchToPage("fundsTfsaWithdraw")
+			pages.SwitchToPage(fundsTfsaWithdrawPageName)
 		})
 
 	} else if title == "RRSP" {
-		page.AddItem("Deposit", "Add funds to your RRSP account", 'a', func() { pages.SwitchToPage("fundsRrspDeposit") })
+		page.AddItem("Deposit", "Add funds to your RRSP account", 'a', func() { pages.SwitchToPage(fundsRrspDepositPageName) })
 		page.AddItem("Withdraw", "Remove funds to your RRSP account", 'b', func() {
 
 			var account Account
@@ -463,11 +447,11 @@ func createFundsTransactionTypePage(pages *tview.Pages, appPrimitives AppPrimiti
 
 			updateAppCashCadBalances(appPrimitives, account.CadBalance)
 			updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
-			pages.SwitchToPage("fundsRrspWithdraw")
+			pages.SwitchToPage(fundsRrspWithdrawPageName)
 		})
 	}
 
-	page.AddItem("Go back", "Press to go back", 'q', func() { pages.SwitchToPage("funds") })
+	page.AddItem("Go back", "Press to go back", 'q', func() { pages.SwitchToPage(fundsPageName) })
 	return page
 }
 
@@ -482,24 +466,13 @@ func createFundsDepositPage(pages *tview.Pages, appPrimitives AppPrimitives, tit
 	page.AddDropDown("Currency", []string{"cad", "usd"}, 0, func(option string, optionIndex int) { selectedCurrency = option })
 
 	page.AddButton("Save", func() {
-		db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
-		if err != nil {
-			panic("failed to connect database")
-		}
+		db := connectDb()
 
 		amountStr := page.GetFormItemByLabel("Amount").(*tview.InputField).GetText()
 		amount, err := strconv.ParseFloat(amountStr, 64)
 
-		var accountId int
-
 		// Set the proper account ID based on the title
-		if title == "Margin" {
-			accountId = 1
-		} else if title == "TFSA" {
-			accountId = 2
-		} else if title == "RRSP" {
-			accountId = 3
-		}
+		var accountId int = getAccountIdFromString(title)
 
 		// Create transaction
 		if err == nil {
@@ -525,27 +498,13 @@ func createFundsDepositPage(pages *tview.Pages, appPrimitives AppPrimitives, tit
 		}
 
 		page.GetFormItemByLabel("Amount").(*tview.InputField).SetText("")
-
-		if title == "Margin" {
-			pages.SwitchToPage("fundsMargin")
-		} else if title == "TFSA" {
-			pages.SwitchToPage("fundsTfsa")
-		} else if title == "RRSP" {
-			pages.SwitchToPage("fundsRrsp")
-		}
+		switchToFundsAccountOptions(title, pages)
 
 	})
 
 	page.AddButton("Cancel", func() {
 		page.GetFormItemByLabel("Amount").(*tview.InputField).SetText("")
-
-		if title == "Margin" {
-			pages.SwitchToPage("fundsMargin")
-		} else if title == "TFSA" {
-			pages.SwitchToPage("fundsTfsa")
-		} else if title == "RRSP" {
-			pages.SwitchToPage("fundsRrsp")
-		}
+		switchToFundsAccountOptions(title, pages)
 	})
 
 	return page
@@ -563,10 +522,7 @@ func createFundsWithdrawPage(pages *tview.Pages, app *tview.Application, appPrim
 	balanceFlex.SetBorder(false)
 	balanceFlex.SetDirection(tview.FlexRow)
 
-	db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
-	if err != nil {
-		panic("failed to connect database")
-	}
+	db := connectDb()
 
 	balanceFlex.AddItem(appPrimitives.FundsCadTextView, 0, 1, false)
 	balanceFlex.AddItem(appPrimitives.FundsUsdTextView, 0, 1, false)
@@ -584,15 +540,8 @@ func createFundsWithdrawPage(pages *tview.Pages, app *tview.Application, appPrim
 		amountStr := form.GetFormItemByLabel("Amount").(*tview.InputField).GetText()
 		amount, err := strconv.ParseFloat(amountStr, 64)
 
-		var accountId int
 		// Set the proper account ID based on the title
-		if title == "Margin" {
-			accountId = 1
-		} else if title == "TFSA" {
-			accountId = 2
-		} else if title == "RRSP" {
-			accountId = 3
-		}
+		var accountId int = getAccountIdFromString(title)
 
 		// Create transaction
 		if err == nil {
@@ -629,26 +578,14 @@ func createFundsWithdrawPage(pages *tview.Pages, app *tview.Application, appPrim
 		}
 
 		form.GetFormItemByLabel("Amount").(*tview.InputField).SetText("")
+		switchToFundsAccountOptions(title, pages)
 
-		if title == "Margin" {
-			pages.SwitchToPage("fundsMargin")
-		} else if title == "TFSA" {
-			pages.SwitchToPage("fundsTfsa")
-		} else if title == "RRSP" {
-			pages.SwitchToPage("fundsRrsp")
-		}
 	})
 
 	form.AddButton("Cancel", func() {
 		form.GetFormItemByLabel("Amount").(*tview.InputField).SetText("")
+		switchToFundsAccountOptions(title, pages)
 
-		if title == "Margin" {
-			pages.SwitchToPage("fundsMargin")
-		} else if title == "TFSA" {
-			pages.SwitchToPage("fundsTfsa")
-		} else if title == "RRSP" {
-			pages.SwitchToPage("fundsRrsp")
-		}
 	})
 
 	page.AddItem(balanceFlex, 0, 1, false)
@@ -660,18 +597,10 @@ func createFundsWithdrawPage(pages *tview.Pages, app *tview.Application, appPrim
 			app.SetFocus(form)
 
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 'q' {
-
-			if title == "Margin" {
-				pages.SwitchToPage("fundsMargin")
-			} else if title == "TFSA" {
-				pages.SwitchToPage("fundsTfsa")
-			} else if title == "RRSP" {
-				pages.SwitchToPage("fundsRrsp")
-			}
+			switchToFundsAccountOptions(title, pages)
 		}
 
 		return event
-
 	})
 
 	return page

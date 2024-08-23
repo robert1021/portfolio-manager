@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"strings"
+
+	"github.com/rivo/tview"
 )
 
 func updateAppCashCadBalances(appPrimitives AppPrimitives, balance float64) {
@@ -26,8 +28,8 @@ func getCurrencyIdFromString(selectedCurrency string) int {
 	return currencyId
 }
 
-func getAccountIdFromString(selectedAccount string) int {
-	var stringLower string = strings.ToLower(selectedAccount)
+func getAccountIdFromString(accountType string) int {
+	var stringLower string = strings.ToLower(accountType)
 	var accountId int
 
 	switch stringLower {
@@ -40,4 +42,17 @@ func getAccountIdFromString(selectedAccount string) int {
 	}
 
 	return accountId
+}
+
+func switchToFundsAccountOptions(accountType string, pages *tview.Pages) {
+	var stringLower string = strings.ToLower(accountType)
+
+	switch stringLower {
+	case "margin":
+		pages.SwitchToPage(fundsMarginPageName)
+	case "tfsa":
+		pages.SwitchToPage(fundsTfsaPageName)
+	case "rrsp":
+		pages.SwitchToPage(fundsRrspPageName)
+	}
 }

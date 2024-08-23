@@ -4,7 +4,6 @@ import (
 	"os"
 
 	"github.com/rivo/tview"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
@@ -68,11 +67,8 @@ type AppPrimitives struct {
 func main() {
 
 	// Set up db
-	if _, err := os.Stat("portfolio-manager.db"); err != nil {
-		db, err := gorm.Open(sqlite.Open("portfolio-manager.db"), &gorm.Config{})
-		if err != nil {
-			panic("failed to connect database")
-		}
+	if _, err := os.Stat(dbFilename); err != nil {
+		db := connectDb()
 
 		db.AutoMigrate(&Account{})
 		db.AutoMigrate(&Stock{})
@@ -123,21 +119,21 @@ func main() {
 	statisticsPage := createStatisticsPage(pages)
 
 	// Add pages to Pages
-	pages.AddPage("home", homePage, true, true)
-	pages.AddPage("portfolio", portfolioPage, true, false)
-	pages.AddPage("portfolioBuy", portfolioBuyPage, true, false)
-	pages.AddPage("portfolioSell", portfolioSellPage, true, false)
-	pages.AddPage("funds", fundsPage, true, false)
-	pages.AddPage("fundsMargin", fundsMarginPage, true, false)
-	pages.AddPage("fundsMarginDeposit", fundsMarginDepositPage, true, false)
-	pages.AddPage("fundsMarginWithdraw", fundsMarginWithdrawPage, true, false)
-	pages.AddPage("fundsTfsa", fundsTfsaPage, true, false)
-	pages.AddPage("fundsTfsaDeposit", fundsTfsaDepositPage, true, false)
-	pages.AddPage("fundsTfsaWithdraw", fundsTfsaWithdrawPage, true, false)
-	pages.AddPage("fundsRrsp", fundsRrspPage, true, false)
-	pages.AddPage("fundsRrspDeposit", fundsRrspDepositPage, true, false)
-	pages.AddPage("fundsRrspWithdraw", fundsRrspWithdrawPage, true, false)
-	pages.AddPage("statistics", statisticsPage, true, false)
+	pages.AddPage(homePageName, homePage, true, true)
+	pages.AddPage(portfolioPageName, portfolioPage, true, false)
+	pages.AddPage(portfolioBuyPageName, portfolioBuyPage, true, false)
+	pages.AddPage(portfolioSellPageName, portfolioSellPage, true, false)
+	pages.AddPage(fundsPageName, fundsPage, true, false)
+	pages.AddPage(fundsMarginPageName, fundsMarginPage, true, false)
+	pages.AddPage(fundsMarginDepositPageName, fundsMarginDepositPage, true, false)
+	pages.AddPage(fundsMarginWithdrawPageName, fundsMarginWithdrawPage, true, false)
+	pages.AddPage(fundsTfsaPageName, fundsTfsaPage, true, false)
+	pages.AddPage(fundsTfsaDepositPageName, fundsTfsaDepositPage, true, false)
+	pages.AddPage(fundsTfsaWithdrawPageName, fundsTfsaWithdrawPage, true, false)
+	pages.AddPage(fundsRrspPageName, fundsRrspPage, true, false)
+	pages.AddPage(fundsRrspDepositPageName, fundsRrspDepositPage, true, false)
+	pages.AddPage(fundsRrspWithdrawPageName, fundsRrspWithdrawPage, true, false)
+	pages.AddPage(statisticsPageName, statisticsPage, true, false)
 
 	// Set the initial page to the home page
 	if err := app.SetRoot(pages, true).Run(); err != nil {
