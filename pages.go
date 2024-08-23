@@ -68,23 +68,10 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	realizedPLValue.SetDynamicColors(true)
 	realizedPLValue.SetText("Realized P/L: xxxx")
 
-	table := tview.NewTable()
-	table.SetBorders(true)
+	appPrimitives.PortfolioStockTable.SetBorders(true)
 
-	// Set up header columns
-	table.SetCell(0, 0, tview.NewTableCell("STOCK"))
-	table.SetCell(0, 1, tview.NewTableCell("PRICE"))
-	table.SetCell(0, 2, tview.NewTableCell("POS"))
-	table.SetCell(0, 3, tview.NewTableCell("P/L"))
-
-	// Create rows with data
-	for r := 1; r < 100; r++ {
-		for c := 0; c < 4; c++ {
-			table.SetCell(r, c, tview.NewTableCell("test"+" "+strconv.Itoa(r)))
-		}
-	}
-
-	//===================================
+	// Create table
+	updatePortfolioStockTable(queryStocks(db), appPrimitives)
 
 	topFlex := tview.NewFlex()
 	topFlex.SetDirection(tview.FlexColumn)
@@ -191,7 +178,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	rightMiddleFlex.SetBorder(true)
 	rightMiddleFlex.SetDirection(tview.FlexRow)
 
-	rightMiddleFlex.AddItem(table, 0, 1, false)
+	rightMiddleFlex.AddItem(appPrimitives.PortfolioStockTable, 0, 1, false)
 
 	bottomFlex := tview.NewFlex()
 	bottomFlex.SetBorder(true)
@@ -225,7 +212,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 				app.SetFocus(sellButton)
 			} else if selected == 2 {
 				selected = 3
-				app.SetFocus(table)
+				app.SetFocus(appPrimitives.PortfolioStockTable)
 			} else {
 				selected = 0
 				app.SetFocus(dropDown)
@@ -242,7 +229,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 			app.SetFocus(sellButton)
 			pages.SwitchToPage(portfolioSellPageName)
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 't' {
-			app.SetFocus(table)
+			app.SetFocus(appPrimitives.PortfolioStockTable)
 		}
 
 		return event
@@ -376,8 +363,14 @@ func createPortfolioSellPage(pages *tview.Pages, app *tview.Application, appPrim
 	page.SetBorder(true)
 	page.SetTitle("Sell")
 
-	page.AddButton("Sell", func() {
+	var selectedStock string
 
+	page.AddDropDown("Stock", []string{""}, 0, func(option string, optionIndex int) { selectedStock = option })
+	page.AddInputField("Quantity", "", 20, nil, nil)
+	page.AddInputField("Price", "", 20, nil, nil)
+
+	page.AddButton("Sell", func() {
+		fmt.Println(selectedStock)
 	})
 	page.AddButton("Cancel", func() {
 		pages.SwitchToPage(portfolioPageName)

@@ -62,6 +62,7 @@ type AppPrimitives struct {
 	PortfolioCadTextView *tview.TextView
 	PortfolioUsdTextView *tview.TextView
 	BuyStockModal        *tview.Modal
+	PortfolioStockTable  *tview.Table
 }
 
 func main() {
@@ -96,6 +97,7 @@ func main() {
 		PortfolioCadTextView: tview.NewTextView(),
 		PortfolioUsdTextView: tview.NewTextView(),
 		BuyStockModal:        tview.NewModal(),
+		PortfolioStockTable:  tview.NewTable(),
 	}
 
 	// Home page

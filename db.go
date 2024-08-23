@@ -12,3 +12,9 @@ func connectDb() *gorm.DB {
 	}
 	return db
 }
+
+func queryStocks(db *gorm.DB) []Stock {
+	var stocks []Stock
+	db.Find(&stocks)
+	return stocks
+}

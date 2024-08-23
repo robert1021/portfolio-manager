@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/rivo/tview"
@@ -54,5 +55,21 @@ func switchToFundsAccountOptions(accountType string, pages *tview.Pages) {
 		pages.SwitchToPage(fundsTfsaPageName)
 	case "rrsp":
 		pages.SwitchToPage(fundsRrspPageName)
+	}
+}
+
+func updatePortfolioStockTable(stocks []Stock, appPrimitives AppPrimitives) {
+	appPrimitives.PortfolioStockTable.Clear()
+	// Set up header columns
+	appPrimitives.PortfolioStockTable.SetCell(0, 0, tview.NewTableCell("STOCK"))
+	appPrimitives.PortfolioStockTable.SetCell(0, 1, tview.NewTableCell("QUANTITY"))
+	appPrimitives.PortfolioStockTable.SetCell(0, 2, tview.NewTableCell("AVERAGE"))
+
+	var row int = 1
+	for _, stock := range stocks {
+		appPrimitives.PortfolioStockTable.SetCell(row, 0, tview.NewTableCell(stock.Symbol))
+		appPrimitives.PortfolioStockTable.SetCell(row, 1, tview.NewTableCell(strconv.Itoa(stock.Quantity)))
+		appPrimitives.PortfolioStockTable.SetCell(row, 2, tview.NewTableCell(fmt.Sprintf("%.2f", stock.Average)))
+		row++
 	}
 }
