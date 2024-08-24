@@ -65,11 +65,27 @@ func updatePortfolioStockTable(stocks []Stock, appPrimitives AppPrimitives) {
 	appPrimitives.PortfolioStockTable.SetCell(0, 1, tview.NewTableCell("QUANTITY"))
 	appPrimitives.PortfolioStockTable.SetCell(0, 2, tview.NewTableCell("AVERAGE"))
 
-	var row int = 1
+	stockMap := make(map[string]StockInfo)
+
 	for _, stock := range stocks {
-		appPrimitives.PortfolioStockTable.SetCell(row, 0, tview.NewTableCell(stock.Symbol))
-		appPrimitives.PortfolioStockTable.SetCell(row, 1, tview.NewTableCell(strconv.Itoa(stock.Quantity)))
-		appPrimitives.PortfolioStockTable.SetCell(row, 2, tview.NewTableCell(fmt.Sprintf("%.2f", stock.Average)))
+		if item, ok := stockMap[stock.Symbol]; ok {
+			// Symbol exists; update the existing StockInfo
+			item.Value = (stock.Average * float64(stock.Quantity)) + item.Value
+			item.Quantity = stock.Quantity + item.Quantity
+			item.Average = ((stock.Average * float64(stock.Quantity)) + item.Value) / (float64(stock.Quantity + item.Quantity))
+			stockMap[stock.Symbol] = item
+		} else {
+			// Symbol does not exist; create a new StockInfo
+			stockMap[stock.Symbol] = StockInfo{Symbol: stock.Symbol, Value: stock.Average * float64(stock.Quantity), Quantity: stock.Quantity, Average: stock.Average}
+		}
+
+	}
+
+	var row int = 1
+	for key := range stockMap {
+		appPrimitives.PortfolioStockTable.SetCell(row, 0, tview.NewTableCell(key))
+		appPrimitives.PortfolioStockTable.SetCell(row, 1, tview.NewTableCell(strconv.Itoa(stockMap[key].Quantity)))
+		appPrimitives.PortfolioStockTable.SetCell(row, 2, tview.NewTableCell(fmt.Sprintf("%.2f", stockMap[key].Average)))
 		row++
 	}
 }

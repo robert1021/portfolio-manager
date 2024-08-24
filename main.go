@@ -56,6 +56,13 @@ type Trade struct {
 	Currency   Currency `gorm:"foreignKey:CurrencyID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
 }
 
+type StockInfo struct {
+	Symbol   string
+	Value    float64
+	Quantity int
+	Average  float64
+}
+
 type AppPrimitives struct {
 	FundsCadTextView     *tview.TextView
 	FundsUsdTextView     *tview.TextView
