@@ -13,7 +13,19 @@ func connectDb() *gorm.DB {
 	return db
 }
 
-func queryStocks(db *gorm.DB) []Stock {
+func queryStock(db *gorm.DB, symbol string, accountId int) Stock {
+	var stock Stock
+	db.First(&stock, "symbol = ? AND account_id = ?", symbol, accountId)
+	return stock
+}
+
+func queryStocks(db *gorm.DB, accountId int) []Stock {
+	var stocks []Stock
+	db.Find(&stocks, "account_id = ?", accountId)
+	return stocks
+}
+
+func queryAllStocks(db *gorm.DB) []Stock {
 	var stocks []Stock
 	db.Find(&stocks)
 	return stocks

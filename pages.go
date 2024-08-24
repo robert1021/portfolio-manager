@@ -70,16 +70,16 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 
 	appPrimitives.PortfolioStockTable.SetBorders(true)
 
-	// Create table
-	updatePortfolioStockTable(queryStocks(db), appPrimitives)
+	// Create inital table
+	updatePortfolioStockTable(queryAllStocks(db), appPrimitives)
 
 	topFlex := tview.NewFlex()
 	topFlex.SetDirection(tview.FlexColumn)
 
-	dropDown := tview.NewDropDown()
-	dropDown.SetBorder(true)
+	// TODO:
+	appPrimitives.PortfolioDropdown.SetBorder(true)
 
-	dropDown.AddOption("All Accounts", func() {
+	appPrimitives.PortfolioDropdown.AddOption("All Accounts", func() {
 		accountType.SetText("Account: All")
 		marketValue.SetText("Market Value: 200000")
 		unrealizedPLValue.SetText("Unrealized P/L: [red]1000[white]")
@@ -95,9 +95,10 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 
 		updateAppCashCadBalances(appPrimitives, account1.CadBalance+account2.CadBalance+account3.CadBalance)
 		updateAppCashUsdBalances(appPrimitives, account1.UsdBalance+account2.UsdBalance+account3.UsdBalance)
+		updatePortfolioStockTable(queryAllStocks(db), appPrimitives)
 
 	})
-	dropDown.AddOption("Margin", func() {
+	appPrimitives.PortfolioDropdown.AddOption("Margin", func() {
 		accountType.SetText("Account: Margin")
 		marketValue.SetText("Market Value: 50000")
 		unrealizedPLValue.SetText("Unrealized P/L: [red]500[white]")
@@ -109,8 +110,9 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 
 		updateAppCashCadBalances(appPrimitives, account.CadBalance)
 		updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
+		updatePortfolioStockTable(queryStocks(db, 1), appPrimitives)
 	})
-	dropDown.AddOption("TFSA", func() {
+	appPrimitives.PortfolioDropdown.AddOption("TFSA", func() {
 		accountType.SetText("Account: TFSA")
 		marketValue.SetText("Market Value: 100000")
 		unrealizedPLValue.SetText("Unrealized P/L: [red]200[white]")
@@ -122,8 +124,9 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 
 		updateAppCashCadBalances(appPrimitives, account.CadBalance)
 		updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
+		updatePortfolioStockTable(queryStocks(db, 2), appPrimitives)
 	})
-	dropDown.AddOption("RRSP", func() {
+	appPrimitives.PortfolioDropdown.AddOption("RRSP", func() {
 		accountType.SetText("Account: RRSP")
 		marketValue.SetText("Market Value: 50000")
 		unrealizedPLValue.SetText("Unrealized P/L: [red]300[white]")
@@ -135,8 +138,9 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 
 		updateAppCashCadBalances(appPrimitives, account.CadBalance)
 		updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
+		updatePortfolioStockTable(queryStocks(db, 3), appPrimitives)
 	})
-	dropDown.SetCurrentOption(0)
+	appPrimitives.PortfolioDropdown.SetCurrentOption(0)
 
 	// Buttons
 	buyButton := tview.NewButton("Buy").SetSelectedFunc(func() {
@@ -147,7 +151,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 		pages.SwitchToPage(portfolioSellPageName)
 	})
 
-	topFlex.AddItem(dropDown, 0, 2, true)
+	topFlex.AddItem(appPrimitives.PortfolioDropdown, 0, 2, true)
 	topFlex.AddItem(tview.NewBox(), 20, 0, false)
 	topFlex.AddItem(buyButton, 0, 1, false)
 	topFlex.AddItem(tview.NewBox(), 5, 0, false)
@@ -215,13 +219,13 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 				app.SetFocus(appPrimitives.PortfolioStockTable)
 			} else {
 				selected = 0
-				app.SetFocus(dropDown)
+				app.SetFocus(appPrimitives.PortfolioDropdown)
 			}
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 'q' {
-			dropDown.SetCurrentOption(0)
+			appPrimitives.PortfolioDropdown.SetCurrentOption(0)
 			pages.SwitchToPage(homePageName)
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 'a' {
-			app.SetFocus(dropDown)
+			app.SetFocus(appPrimitives.PortfolioDropdown)
 		} else if event.Key() == tcell.KeyRune && event.Rune() == 'b' {
 			app.SetFocus(buyButton)
 			pages.SwitchToPage(portfolioBuyPageName)
@@ -346,6 +350,8 @@ func createPortfolioBuyPage(pages *tview.Pages, app *tview.Application, appPrimi
 					db.Create(&Stock{Symbol: symbol, Average: price, Quantity: quantity, CurrencyID: selectedCurrencyId, AccountID: selectedAccountId})
 				}
 
+				updatePortfolioStockTable(queryStocks(db, selectedAccountId), appPrimitives)
+				appPrimitives.PortfolioDropdown.SetCurrentOption(selectedAccountId)
 				pages.SwitchToPage(portfolioPageName)
 			}
 
@@ -363,14 +369,37 @@ func createPortfolioSellPage(pages *tview.Pages, app *tview.Application, appPrim
 	page.SetBorder(true)
 	page.SetTitle("Sell")
 
-	var selectedStock string
+	var selectedCurrency string
+	var selectedAccount string
 
-	page.AddDropDown("Stock", []string{""}, 0, func(option string, optionIndex int) { selectedStock = option })
+	page.AddInputField("Stock", "", 20, nil, nil)
 	page.AddInputField("Quantity", "", 20, nil, nil)
 	page.AddInputField("Price", "", 20, nil, nil)
+	page.AddDropDown("Account", []string{"Margin", "TFSA", "RRSP"}, 0, func(option string, optionIndex int) { selectedAccount = option })
+	page.AddDropDown("Currency", []string{"cad", "usd"}, 0, func(option string, optionIndex int) { selectedCurrency = option })
 
 	page.AddButton("Sell", func() {
-		fmt.Println(selectedStock)
+
+		var symbol string = page.GetFormItemByLabel("Stock").(*tview.InputField).GetText()
+		quantity, quantityErr := strconv.Atoi(page.GetFormItemByLabel("Quantity").(*tview.InputField).GetText())
+		price, priceErr := strconv.ParseFloat(page.GetFormItemByLabel("Price").(*tview.InputField).GetText(), 64)
+
+		var selectedCurrencyId int = getCurrencyIdFromString(selectedCurrency)
+		var selectedAccountId int = getAccountIdFromString(selectedAccount)
+
+		if quantityErr == nil && symbol != "" && priceErr == nil {
+			db := connectDb()
+
+			var account Account
+			db.First(&account, selectedAccountId)
+
+			// Query stocks for ticker
+			fmt.Println(selectedCurrencyId)
+			fmt.Sprintf("%v", quantity)
+			fmt.Sprintf("%v", price)
+
+		}
+
 	})
 	page.AddButton("Cancel", func() {
 		pages.SwitchToPage(portfolioPageName)
