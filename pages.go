@@ -337,8 +337,8 @@ func createPortfolioBuyPage(pages *tview.Pages, app *tview.Application, appPrimi
 				result := db.First(&stock, "symbol = ? AND account_id = ?", symbol, selectedAccountId)
 				// Update stock record or add new if none found
 				if result.RowsAffected != 0 {
-					var oldPurchaseValue float64 = float64(stock.Quantity) * stock.Average
-					var newPurchaseValue float64 = float64(quantity) * price
+					var oldPurchaseValue float64 = calculateStockCost(stock.Quantity, stock.Average)
+					var newPurchaseValue float64 = calculateStockCost(quantity, price)
 					var newQuantity int = stock.Quantity + quantity
 					var newAverage float64 = (oldPurchaseValue + newPurchaseValue) / float64(newQuantity)
 					// Update stock record in db
@@ -394,9 +394,53 @@ func createPortfolioSellPage(pages *tview.Pages, app *tview.Application, appPrim
 			db.First(&account, selectedAccountId)
 
 			// Query stocks for ticker
-			fmt.Println(selectedCurrencyId)
-			fmt.Sprintf("%v", quantity)
-			fmt.Sprintf("%v", price)
+			stock := queryStock(db, symbol, selectedAccountId)
+
+			if stock.Symbol != "" {
+				var newQuantity int = stock.Quantity - quantity
+				var cost float64 = calculateStockCost(quantity, price)
+				var newBalance float64
+				// sell some stock
+				if newQuantity > 0 {
+					stock.Quantity = newQuantity
+					db.Create(&Trade{Symbol: symbol, Quantity: quantity, Price: price, TradeType: "sell", CurrencyID: selectedCurrencyId, AccountID: selectedAccountId})
+
+					if stock.CurrencyID == 1 {
+						newBalance = account.CadBalance + cost
+						account.CadBalance = newBalance
+						updateAppCashCadBalances(appPrimitives, newBalance)
+					} else {
+						newBalance = account.UsdBalance + cost
+						account.UsdBalance = newBalance
+						updateAppCashUsdBalances(appPrimitives, newBalance)
+					}
+
+					db.Save(&account)
+					db.Save(&stock)
+					updatePortfolioStockTable(queryStocks(db, selectedAccountId), appPrimitives)
+
+				} else if newQuantity == 0 {
+					db.Delete(&stock)
+					db.Create(&Trade{Symbol: symbol, Quantity: quantity, Price: price, TradeType: "sell", CurrencyID: selectedCurrencyId, AccountID: selectedAccountId})
+
+					if stock.CurrencyID == 1 {
+						newBalance = account.CadBalance + cost
+						account.CadBalance = newBalance
+						updateAppCashCadBalances(appPrimitives, newBalance)
+					} else {
+						newBalance = account.UsdBalance + cost
+						account.UsdBalance = newBalance
+						updateAppCashUsdBalances(appPrimitives, newBalance)
+					}
+
+					db.Save(&account)
+					db.Save(&stock)
+					updatePortfolioStockTable(queryStocks(db, selectedAccountId), appPrimitives)
+
+				}
+			}
+
+			pages.SwitchToPage(portfolioPageName)
 
 		}
 

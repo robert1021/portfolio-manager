@@ -89,3 +89,7 @@ func updatePortfolioStockTable(stocks []Stock, appPrimitives AppPrimitives) {
 		row++
 	}
 }
+
+func calculateStockCost(quantity int, price float64) float64 {
+	return float64(quantity) * price
+}
