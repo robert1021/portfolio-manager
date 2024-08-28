@@ -30,3 +30,17 @@ func queryAllStocks(db *gorm.DB) []Stock {
 	db.Find(&stocks)
 	return stocks
 }
+
+func queryAccountMarketValue(db *gorm.DB, accountId int) float64 {
+	var stocks []Stock = queryStocks(db, accountId)
+	var marketValue float64
+
+	for _, stock := range stocks {
+		marketValue += calculateStockCost(stock.Quantity, stock.Average)
+	}
+	return marketValue
+}
+
+func queryAllAccountsMarketValue(db *gorm.DB) float64 {
+	return queryAccountMarketValue(db, 1) + queryAccountMarketValue(db, 2) + queryAccountMarketValue(db, 3)
+}

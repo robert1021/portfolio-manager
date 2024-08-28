@@ -27,6 +27,7 @@ func createHomePage(pages *tview.Pages, quitFunc Fn, appPrimitives AppPrimitives
 		db.First(&account2, 2)
 		db.First(&account3, 3)
 
+		updateAppMarketValue(appPrimitives, queryAllAccountsMarketValue(db))
 		updateAppCashCadBalances(appPrimitives, account1.CadBalance+account2.CadBalance+account3.CadBalance)
 		updateAppCashUsdBalances(appPrimitives, account1.UsdBalance+account2.UsdBalance+account3.UsdBalance)
 		pages.SwitchToPage(portfolioPageName)
@@ -57,9 +58,6 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	accountType := tview.NewTextView()
 	accountType.SetText("Account: All")
 
-	marketValue := tview.NewTextView()
-	marketValue.SetText("Market Value: ")
-
 	unrealizedPLValue := tview.NewTextView()
 	unrealizedPLValue.SetDynamicColors(true)
 	unrealizedPLValue.SetText("Unrealized P/L: xxxx")
@@ -81,7 +79,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 
 	appPrimitives.PortfolioDropdown.AddOption("All Accounts", func() {
 		accountType.SetText("Account: All")
-		marketValue.SetText("Market Value: 200000")
+		updateAppMarketValue(appPrimitives, queryAllAccountsMarketValue(db))
 		unrealizedPLValue.SetText("Unrealized P/L: [red]1000[white]")
 		realizedPLValue.SetText("Realized P/L: [green]5000[white]")
 
@@ -100,7 +98,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	})
 	appPrimitives.PortfolioDropdown.AddOption("Margin", func() {
 		accountType.SetText("Account: Margin")
-		marketValue.SetText("Market Value: 50000")
+		updateAppMarketValue(appPrimitives, queryAccountMarketValue(db, 1))
 		unrealizedPLValue.SetText("Unrealized P/L: [red]500[white]")
 		realizedPLValue.SetText("Realized P/L: [green]3000[white]")
 
@@ -114,7 +112,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	})
 	appPrimitives.PortfolioDropdown.AddOption("TFSA", func() {
 		accountType.SetText("Account: TFSA")
-		marketValue.SetText("Market Value: 100000")
+		updateAppMarketValue(appPrimitives, queryAccountMarketValue(db, 2))
 		unrealizedPLValue.SetText("Unrealized P/L: [red]200[white]")
 		realizedPLValue.SetText("Realized P/L: [green]1000[white]")
 
@@ -128,7 +126,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	})
 	appPrimitives.PortfolioDropdown.AddOption("RRSP", func() {
 		accountType.SetText("Account: RRSP")
-		marketValue.SetText("Market Value: 50000")
+		updateAppMarketValue(appPrimitives, queryAccountMarketValue(db, 3))
 		unrealizedPLValue.SetText("Unrealized P/L: [red]300[white]")
 		realizedPLValue.SetText("Realized P/L: [green]1000[white]")
 
@@ -173,7 +171,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	cashBalancesFlex.AddItem(appPrimitives.PortfolioUsdTextView, 0, 1, false)
 
 	leftMiddleFlex.AddItem(accountType, 0, 1, false)
-	leftMiddleFlex.AddItem(marketValue, 0, 1, false)
+	leftMiddleFlex.AddItem(appPrimitives.PortfolioMarketValue, 0, 1, false)
 	leftMiddleFlex.AddItem(realizedPLValue, 0, 1, false)
 	leftMiddleFlex.AddItem(unrealizedPLValue, 0, 1, false)
 	leftMiddleFlex.AddItem(cashBalancesFlex, 0, 2, false)
@@ -352,6 +350,7 @@ func createPortfolioBuyPage(pages *tview.Pages, app *tview.Application, appPrimi
 
 				updatePortfolioStockTable(queryStocks(db, selectedAccountId), appPrimitives)
 				appPrimitives.PortfolioDropdown.SetCurrentOption(selectedAccountId)
+				updateAppMarketValue(appPrimitives, queryAccountMarketValue(db, selectedAccountId))
 				pages.SwitchToPage(portfolioPageName)
 			}
 
@@ -417,7 +416,6 @@ func createPortfolioSellPage(pages *tview.Pages, app *tview.Application, appPrim
 
 					db.Save(&account)
 					db.Save(&stock)
-					updatePortfolioStockTable(queryStocks(db, selectedAccountId), appPrimitives)
 
 				} else if newQuantity == 0 {
 					db.Delete(&stock)
@@ -435,9 +433,11 @@ func createPortfolioSellPage(pages *tview.Pages, app *tview.Application, appPrim
 
 					db.Save(&account)
 					db.Save(&stock)
-					updatePortfolioStockTable(queryStocks(db, selectedAccountId), appPrimitives)
 
 				}
+				appPrimitives.PortfolioDropdown.SetCurrentOption(selectedAccountId)
+				updateAppMarketValue(appPrimitives, queryAccountMarketValue(db, selectedAccountId))
+				updatePortfolioStockTable(queryStocks(db, selectedAccountId), appPrimitives)
 			}
 
 			pages.SwitchToPage(portfolioPageName)

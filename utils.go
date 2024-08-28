@@ -18,6 +18,10 @@ func updateAppCashUsdBalances(appPrimitives AppPrimitives, balance float64) {
 	appPrimitives.PortfolioUsdTextView.SetText(fmt.Sprintf("Balance USD: %.2f", balance))
 }
 
+func updateAppMarketValue(appPrimitives AppPrimitives, marketValue float64) {
+	appPrimitives.PortfolioMarketValue.SetText(fmt.Sprintf("Market Value: %.2f", marketValue))
+}
+
 func getCurrencyIdFromString(selectedCurrency string) int {
 	var currencyId int
 	if selectedCurrency == "cad" {
