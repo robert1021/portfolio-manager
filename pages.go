@@ -6,6 +6,7 @@ import (
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"gorm.io/gorm"
 )
 
 // Set up types
@@ -333,8 +334,10 @@ func createPortfolioBuyPage(pages *tview.Pages, app *tview.Application, appPrimi
 				// Query for same stock in specific account to calculate average
 				var stock Stock
 				result := db.First(&stock, "symbol = ? AND account_id = ?", symbol, selectedAccountId)
-				// Update stock record or add new if none found
-				if result.RowsAffected != 0 {
+
+				if result.Error == gorm.ErrRecordNotFound {
+					db.Create(&Stock{Symbol: symbol, Average: price, Quantity: quantity, CurrencyID: selectedCurrencyId, AccountID: selectedAccountId})
+				} else if result.RowsAffected != 0 {
 					var oldPurchaseValue float64 = calculateStockCost(stock.Quantity, stock.Average)
 					var newPurchaseValue float64 = calculateStockCost(quantity, price)
 					var newQuantity int = stock.Quantity + quantity
@@ -343,9 +346,6 @@ func createPortfolioBuyPage(pages *tview.Pages, app *tview.Application, appPrimi
 					stock.Average = newAverage
 					stock.Quantity = newQuantity
 					db.Save(&stock)
-
-				} else {
-					db.Create(&Stock{Symbol: symbol, Average: price, Quantity: quantity, CurrencyID: selectedCurrencyId, AccountID: selectedAccountId})
 				}
 
 				updatePortfolioStockTable(queryStocks(db, selectedAccountId), appPrimitives)

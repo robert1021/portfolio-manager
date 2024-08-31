@@ -72,6 +72,7 @@ func updatePortfolioStockTable(stocks []Stock, appPrimitives AppPrimitives) {
 	appPrimitives.PortfolioStockTable.SetCell(0, 0, tview.NewTableCell("STOCK"))
 	appPrimitives.PortfolioStockTable.SetCell(0, 1, tview.NewTableCell("QUANTITY"))
 	appPrimitives.PortfolioStockTable.SetCell(0, 2, tview.NewTableCell("AVERAGE"))
+	appPrimitives.PortfolioStockTable.SetCell(0, 3, tview.NewTableCell("MARKET PRICE"))
 
 	stockMap := make(map[string]StockInfo)
 
@@ -94,6 +95,14 @@ func updatePortfolioStockTable(stocks []Stock, appPrimitives AppPrimitives) {
 		appPrimitives.PortfolioStockTable.SetCell(row, 0, tview.NewTableCell(key))
 		appPrimitives.PortfolioStockTable.SetCell(row, 1, tview.NewTableCell(strconv.Itoa(stockMap[key].Quantity)))
 		appPrimitives.PortfolioStockTable.SetCell(row, 2, tview.NewTableCell(fmt.Sprintf("%.2f", stockMap[key].Average)))
+
+		stockPriceYahooFinance, err := getStockPriceYahooFinanceAPI(key)
+		if err == nil {
+			appPrimitives.PortfolioStockTable.SetCell(row, 3, tview.NewTableCell(stockPriceYahooFinance))
+		} else {
+			appPrimitives.PortfolioStockTable.SetCell(row, 3, tview.NewTableCell("0"))
+		}
+
 		row++
 	}
 }

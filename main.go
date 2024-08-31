@@ -76,7 +76,7 @@ type AppPrimitives struct {
 	RealizedPLValue      *tview.TextView
 }
 
-func main() {
+func run() {
 
 	// Set up db
 	if _, err := os.Stat(dbFilename); err != nil {
@@ -156,4 +156,8 @@ func main() {
 		panic(err)
 	}
 
+}
+
+func main() {
+	run()
 }
