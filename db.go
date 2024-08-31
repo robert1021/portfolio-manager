@@ -44,3 +44,24 @@ func queryAccountMarketValue(db *gorm.DB, accountId int) float64 {
 func queryAllAccountsMarketValue(db *gorm.DB) float64 {
 	return queryAccountMarketValue(db, 1) + queryAccountMarketValue(db, 2) + queryAccountMarketValue(db, 3)
 }
+
+func queryTrades(db *gorm.DB, accountId int) []Trade {
+	var trades []Trade
+	db.Find(&trades, "account_id = ?", accountId)
+	return trades
+}
+
+func queryAccountRealizedPL(db *gorm.DB, accountId int) float64 {
+	var trades []Trade = queryTrades(db, accountId)
+	var realizedPL float64
+
+	for _, trade := range trades {
+		realizedPL += trade.RealizedPL
+	}
+
+	return realizedPL
+}
+
+func queryAllAccountsRealizedPL(db *gorm.DB) float64 {
+	return queryAccountRealizedPL(db, 1) + queryAccountRealizedPL(db, 2) + queryAccountRealizedPL(db, 3)
+}

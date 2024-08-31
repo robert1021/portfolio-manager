@@ -28,6 +28,7 @@ func createHomePage(pages *tview.Pages, quitFunc Fn, appPrimitives AppPrimitives
 		db.First(&account3, 3)
 
 		updateAppMarketValue(appPrimitives, queryAllAccountsMarketValue(db))
+		updateAppRealizedPLValue(appPrimitives, queryAllAccountsRealizedPL(db))
 		updateAppCashCadBalances(appPrimitives, account1.CadBalance+account2.CadBalance+account3.CadBalance)
 		updateAppCashUsdBalances(appPrimitives, account1.UsdBalance+account2.UsdBalance+account3.UsdBalance)
 		pages.SwitchToPage(portfolioPageName)
@@ -62,9 +63,8 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	unrealizedPLValue.SetDynamicColors(true)
 	unrealizedPLValue.SetText("Unrealized P/L: xxxx")
 
-	realizedPLValue := tview.NewTextView()
-	realizedPLValue.SetDynamicColors(true)
-	realizedPLValue.SetText("Realized P/L: xxxx")
+	appPrimitives.RealizedPLValue.SetDynamicColors(true)
+	updateAppRealizedPLValue(appPrimitives, queryAllAccountsRealizedPL(db))
 
 	appPrimitives.PortfolioStockTable.SetBorders(true)
 
@@ -81,7 +81,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 		accountType.SetText("Account: All")
 		updateAppMarketValue(appPrimitives, queryAllAccountsMarketValue(db))
 		unrealizedPLValue.SetText("Unrealized P/L: [red]1000[white]")
-		realizedPLValue.SetText("Realized P/L: [green]5000[white]")
+		updateAppRealizedPLValue(appPrimitives, queryAllAccountsRealizedPL(db))
 
 		// Get all accounts and add them up
 		var account1 Account
@@ -100,7 +100,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 		accountType.SetText("Account: Margin")
 		updateAppMarketValue(appPrimitives, queryAccountMarketValue(db, 1))
 		unrealizedPLValue.SetText("Unrealized P/L: [red]500[white]")
-		realizedPLValue.SetText("Realized P/L: [green]3000[white]")
+		updateAppRealizedPLValue(appPrimitives, queryAccountRealizedPL(db, 1))
 
 		// Get margin account
 		var account Account
@@ -114,7 +114,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 		accountType.SetText("Account: TFSA")
 		updateAppMarketValue(appPrimitives, queryAccountMarketValue(db, 2))
 		unrealizedPLValue.SetText("Unrealized P/L: [red]200[white]")
-		realizedPLValue.SetText("Realized P/L: [green]1000[white]")
+		updateAppRealizedPLValue(appPrimitives, queryAccountRealizedPL(db, 2))
 
 		// Get tfsa account
 		var account Account
@@ -128,7 +128,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 		accountType.SetText("Account: RRSP")
 		updateAppMarketValue(appPrimitives, queryAccountMarketValue(db, 3))
 		unrealizedPLValue.SetText("Unrealized P/L: [red]300[white]")
-		realizedPLValue.SetText("Realized P/L: [green]1000[white]")
+		updateAppRealizedPLValue(appPrimitives, queryAccountRealizedPL(db, 3))
 
 		// Get tfsa account
 		var account Account
@@ -172,7 +172,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 
 	leftMiddleFlex.AddItem(accountType, 0, 1, false)
 	leftMiddleFlex.AddItem(appPrimitives.PortfolioMarketValue, 0, 1, false)
-	leftMiddleFlex.AddItem(realizedPLValue, 0, 1, false)
+	leftMiddleFlex.AddItem(appPrimitives.RealizedPLValue, 0, 1, false)
 	leftMiddleFlex.AddItem(unrealizedPLValue, 0, 1, false)
 	leftMiddleFlex.AddItem(cashBalancesFlex, 0, 2, false)
 
@@ -399,10 +399,12 @@ func createPortfolioSellPage(pages *tview.Pages, app *tview.Application, appPrim
 				var newQuantity int = stock.Quantity - quantity
 				var cost float64 = calculateStockCost(quantity, price)
 				var newBalance float64
+				var realizedPL float64 = calculateRealizedPL(price, stock.Average, quantity)
+
 				// sell some stock
 				if newQuantity > 0 {
 					stock.Quantity = newQuantity
-					db.Create(&Trade{Symbol: symbol, Quantity: quantity, Price: price, TradeType: "sell", CurrencyID: selectedCurrencyId, AccountID: selectedAccountId})
+					db.Create(&Trade{Symbol: symbol, Quantity: quantity, Price: price, TradeType: "sell", RealizedPL: realizedPL, CurrencyID: selectedCurrencyId, AccountID: selectedAccountId})
 
 					if stock.CurrencyID == 1 {
 						newBalance = account.CadBalance + cost
@@ -419,7 +421,7 @@ func createPortfolioSellPage(pages *tview.Pages, app *tview.Application, appPrim
 
 				} else if newQuantity == 0 {
 					db.Delete(&stock)
-					db.Create(&Trade{Symbol: symbol, Quantity: quantity, Price: price, TradeType: "sell", CurrencyID: selectedCurrencyId, AccountID: selectedAccountId})
+					db.Create(&Trade{Symbol: symbol, Quantity: quantity, Price: price, TradeType: "sell", RealizedPL: realizedPL, CurrencyID: selectedCurrencyId, AccountID: selectedAccountId})
 
 					if stock.CurrencyID == 1 {
 						newBalance = account.CadBalance + cost

@@ -50,6 +50,7 @@ type Trade struct {
 	Quantity   int      `gorm:"not null"`
 	Price      float64  `gorm:"not null"`
 	TradeType  string   `gorm:"not null"` // Type of trade: "buy" or "sell"
+	RealizedPL float64  //store realized P&L
 	CurrencyID int      // Foreign key to Currency
 	AccountID  int      // Foreign key to Account
 	Account    Account  `gorm:"foreignKey:AccountID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"`
@@ -72,6 +73,7 @@ type AppPrimitives struct {
 	PortfolioStockTable  *tview.Table
 	PortfolioDropdown    *tview.DropDown
 	PortfolioMarketValue *tview.TextView
+	RealizedPLValue      *tview.TextView
 }
 
 func main() {
@@ -109,6 +111,7 @@ func main() {
 		PortfolioStockTable:  tview.NewTable(),
 		PortfolioDropdown:    tview.NewDropDown(),
 		PortfolioMarketValue: tview.NewTextView(),
+		RealizedPLValue:      tview.NewTextView(),
 	}
 
 	// Home page

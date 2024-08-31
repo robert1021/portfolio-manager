@@ -22,6 +22,10 @@ func updateAppMarketValue(appPrimitives AppPrimitives, marketValue float64) {
 	appPrimitives.PortfolioMarketValue.SetText(fmt.Sprintf("Market Value: %.2f", marketValue))
 }
 
+func updateAppRealizedPLValue(appPrimitives AppPrimitives, value float64) {
+	appPrimitives.RealizedPLValue.SetText(fmt.Sprintf("Realized P/L: %.2f", value))
+}
+
 func getCurrencyIdFromString(selectedCurrency string) int {
 	var currencyId int
 	if selectedCurrency == "cad" {
@@ -96,4 +100,8 @@ func updatePortfolioStockTable(stocks []Stock, appPrimitives AppPrimitives) {
 
 func calculateStockCost(quantity int, price float64) float64 {
 	return float64(quantity) * price
+}
+
+func calculateRealizedPL(sellPrice float64, average float64, quantity int) float64 {
+	return (sellPrice - average) * float64(quantity)
 }
