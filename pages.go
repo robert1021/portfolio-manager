@@ -60,9 +60,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	accountType := tview.NewTextView()
 	accountType.SetText("Account: All")
 
-	unrealizedPLValue := tview.NewTextView()
-	unrealizedPLValue.SetDynamicColors(true)
-	unrealizedPLValue.SetText("Unrealized P/L: xxxx")
+	appPrimitives.UnrealizedPLValue.SetDynamicColors(true)
 
 	appPrimitives.RealizedPLValue.SetDynamicColors(true)
 	updateAppRealizedPLValue(appPrimitives, queryAllAccountsRealizedPL(db))
@@ -71,6 +69,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 
 	// Create inital table
 	updatePortfolioStockTable(queryAllStocks(db), appPrimitives)
+	updateAppUnrealizedPLValue(appPrimitives, queryAllAccountsUnrealizedPL(db))
 
 	topFlex := tview.NewFlex()
 	topFlex.SetDirection(tview.FlexColumn)
@@ -81,7 +80,6 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	appPrimitives.PortfolioDropdown.AddOption("All Accounts", func() {
 		accountType.SetText("Account: All")
 		updateAppMarketValue(appPrimitives, queryAllAccountsMarketValue(db))
-		unrealizedPLValue.SetText("Unrealized P/L: [red]1000[white]")
 		updateAppRealizedPLValue(appPrimitives, queryAllAccountsRealizedPL(db))
 
 		// Get all accounts and add them up
@@ -95,12 +93,12 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 		updateAppCashCadBalances(appPrimitives, account1.CadBalance+account2.CadBalance+account3.CadBalance)
 		updateAppCashUsdBalances(appPrimitives, account1.UsdBalance+account2.UsdBalance+account3.UsdBalance)
 		updatePortfolioStockTable(queryAllStocks(db), appPrimitives)
+		updateAppUnrealizedPLValue(appPrimitives, queryAllAccountsUnrealizedPL(db))
 
 	})
 	appPrimitives.PortfolioDropdown.AddOption("Margin", func() {
 		accountType.SetText("Account: Margin")
 		updateAppMarketValue(appPrimitives, queryAccountMarketValue(db, 1))
-		unrealizedPLValue.SetText("Unrealized P/L: [red]500[white]")
 		updateAppRealizedPLValue(appPrimitives, queryAccountRealizedPL(db, 1))
 
 		// Get margin account
@@ -110,11 +108,11 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 		updateAppCashCadBalances(appPrimitives, account.CadBalance)
 		updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
 		updatePortfolioStockTable(queryStocks(db, 1), appPrimitives)
+		updateAppUnrealizedPLValue(appPrimitives, queryAccountUnrealizedPL(db, 1))
 	})
 	appPrimitives.PortfolioDropdown.AddOption("TFSA", func() {
 		accountType.SetText("Account: TFSA")
 		updateAppMarketValue(appPrimitives, queryAccountMarketValue(db, 2))
-		unrealizedPLValue.SetText("Unrealized P/L: [red]200[white]")
 		updateAppRealizedPLValue(appPrimitives, queryAccountRealizedPL(db, 2))
 
 		// Get tfsa account
@@ -124,11 +122,11 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 		updateAppCashCadBalances(appPrimitives, account.CadBalance)
 		updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
 		updatePortfolioStockTable(queryStocks(db, 2), appPrimitives)
+		updateAppUnrealizedPLValue(appPrimitives, queryAccountUnrealizedPL(db, 2))
 	})
 	appPrimitives.PortfolioDropdown.AddOption("RRSP", func() {
 		accountType.SetText("Account: RRSP")
 		updateAppMarketValue(appPrimitives, queryAccountMarketValue(db, 3))
-		unrealizedPLValue.SetText("Unrealized P/L: [red]300[white]")
 		updateAppRealizedPLValue(appPrimitives, queryAccountRealizedPL(db, 3))
 
 		// Get tfsa account
@@ -138,6 +136,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 		updateAppCashCadBalances(appPrimitives, account.CadBalance)
 		updateAppCashUsdBalances(appPrimitives, account.UsdBalance)
 		updatePortfolioStockTable(queryStocks(db, 3), appPrimitives)
+		updateAppUnrealizedPLValue(appPrimitives, queryAccountUnrealizedPL(db, 3))
 	})
 	appPrimitives.PortfolioDropdown.SetCurrentOption(0)
 
@@ -174,7 +173,7 @@ func createPortfolioPage(pages *tview.Pages, app *tview.Application, appPrimitiv
 	leftMiddleFlex.AddItem(accountType, 0, 1, false)
 	leftMiddleFlex.AddItem(appPrimitives.PortfolioMarketValue, 0, 1, false)
 	leftMiddleFlex.AddItem(appPrimitives.RealizedPLValue, 0, 1, false)
-	leftMiddleFlex.AddItem(unrealizedPLValue, 0, 1, false)
+	leftMiddleFlex.AddItem(appPrimitives.UnrealizedPLValue, 0, 1, false)
 	leftMiddleFlex.AddItem(cashBalancesFlex, 0, 2, false)
 
 	rightMiddleFlex := tview.NewFlex()

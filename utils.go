@@ -26,6 +26,10 @@ func updateAppRealizedPLValue(appPrimitives AppPrimitives, value float64) {
 	appPrimitives.RealizedPLValue.SetText(fmt.Sprintf("Realized P/L: %.2f", value))
 }
 
+func updateAppUnrealizedPLValue(appPrimitives AppPrimitives, value float64) {
+	appPrimitives.UnrealizedPLValue.SetText(fmt.Sprintf("Unrealized P/L: %.2f", value))
+}
+
 func getCurrencyIdFromString(selectedCurrency string) int {
 	var currencyId int
 	if selectedCurrency == "cad" {
@@ -73,6 +77,7 @@ func updatePortfolioStockTable(stocks []Stock, appPrimitives AppPrimitives) {
 	appPrimitives.PortfolioStockTable.SetCell(0, 1, tview.NewTableCell("QUANTITY"))
 	appPrimitives.PortfolioStockTable.SetCell(0, 2, tview.NewTableCell("AVERAGE"))
 	appPrimitives.PortfolioStockTable.SetCell(0, 3, tview.NewTableCell("MARKET PRICE"))
+	appPrimitives.PortfolioStockTable.SetCell(0, 4, tview.NewTableCell("P/L"))
 
 	stockMap := make(map[string]StockInfo)
 
@@ -98,9 +103,12 @@ func updatePortfolioStockTable(stocks []Stock, appPrimitives AppPrimitives) {
 
 		stockPriceYahooFinance, err := getStockPriceYahooFinanceAPI(key)
 		if err == nil {
+			stockPriceFloat, _ := strconv.ParseFloat(stockPriceYahooFinance, 64)
 			appPrimitives.PortfolioStockTable.SetCell(row, 3, tview.NewTableCell(stockPriceYahooFinance))
+			appPrimitives.PortfolioStockTable.SetCell(row, 4, tview.NewTableCell(fmt.Sprintf("%.2f", calculateRealizedPL(stockPriceFloat, stockMap[key].Average, stockMap[key].Quantity))))
 		} else {
 			appPrimitives.PortfolioStockTable.SetCell(row, 3, tview.NewTableCell("0"))
+			appPrimitives.PortfolioStockTable.SetCell(row, 4, tview.NewTableCell("0"))
 		}
 
 		row++

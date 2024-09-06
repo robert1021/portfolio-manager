@@ -1,6 +1,8 @@
 package main
 
 import (
+	"strconv"
+
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -64,4 +66,24 @@ func queryAccountRealizedPL(db *gorm.DB, accountId int) float64 {
 
 func queryAllAccountsRealizedPL(db *gorm.DB) float64 {
 	return queryAccountRealizedPL(db, 1) + queryAccountRealizedPL(db, 2) + queryAccountRealizedPL(db, 3)
+}
+
+func queryAccountUnrealizedPL(db *gorm.DB, accountId int) float64 {
+	var stocks []Stock = queryStocks(db, accountId)
+
+	var sum float64 = 0.0
+	for _, stock := range stocks {
+		stockPriceYahooFinance, err := getStockPriceYahooFinanceAPI(stock.Symbol)
+
+		if err == nil {
+			stockPriceFloat, _ := strconv.ParseFloat(stockPriceYahooFinance, 64)
+			sum += calculateRealizedPL(stockPriceFloat, stock.Average, stock.Quantity)
+		}
+
+	}
+	return sum
+}
+
+func queryAllAccountsUnrealizedPL(db *gorm.DB) float64 {
+	return queryAccountUnrealizedPL(db, 1) + queryAccountUnrealizedPL(db, 2) + queryAccountUnrealizedPL(db, 3)
 }

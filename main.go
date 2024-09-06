@@ -74,6 +74,7 @@ type AppPrimitives struct {
 	PortfolioDropdown    *tview.DropDown
 	PortfolioMarketValue *tview.TextView
 	RealizedPLValue      *tview.TextView
+	UnrealizedPLValue    *tview.TextView
 }
 
 func run() {
@@ -112,6 +113,7 @@ func run() {
 		PortfolioDropdown:    tview.NewDropDown(),
 		PortfolioMarketValue: tview.NewTextView(),
 		RealizedPLValue:      tview.NewTextView(),
+		UnrealizedPLValue:    tview.NewTextView(),
 	}
 
 	// Home page
