@@ -13,9 +13,9 @@ Portfolio Manager is a simple terminal-based user interface (UI) application des
 
 ## Installation
 
-1. Clone the repository: git clone https://github.com/robert1021/portfolio-manager.git
-2. Navigate to the project directory: cd portfolio-manager
-3. Build the project: go build .
+1. *Clone the repository:* git clone https://github.com/robert1021/portfolio-manager.git
+2. *Navigate to the project directory:* cd portfolio-manager
+3. *Build the project:* go build .
 
 ## Screenshots
 *Main Menu*
