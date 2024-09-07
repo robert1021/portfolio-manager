@@ -38,7 +38,13 @@ func queryAccountMarketValue(db *gorm.DB, accountId int) float64 {
 	var marketValue float64
 
 	for _, stock := range stocks {
-		marketValue += calculateStockCost(stock.Quantity, stock.Average)
+		stockPriceYahooFinance, err := getStockPriceYahooFinanceAPI(stock.Symbol)
+
+		if err == nil {
+			stockPriceFloat, _ := strconv.ParseFloat(stockPriceYahooFinance, 64)
+			marketValue += calculateStockCost(stock.Quantity, stockPriceFloat)
+		}
+
 	}
 	return marketValue
 }
