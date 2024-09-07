@@ -1,17 +1,21 @@
-# portfolio-manager
+# Portfolio Manager
 
-# Overview
+## Overview
 
 Portfolio Manager is a simple terminal-based user interface (UI) application designed to help you manage and track your stock portfolio. Built with Go, this tool offers an intuitive way to view, update, and analyze your investments directly from the terminal.
 
-# Features
+## Features
 
 - *View Portfolio:* Display a summary of your stock holdings and their current values.
 - *Buy/Sell Stocks:* Easily add or remove stocks from your portfolio.
 - *Updated Prices:* Stock prices update automatically with a Yahoo Finance API.
 - *Analyze Performance:* Get insights into the performance of your investments.
 
+## Installation
 
+1. Clone the repository: git clone https://github.com/robert1021/portfolio-manager.git
+2. Navigate to the project directory: cd portfolio-manager
+3. Build the project: go build .
 
 ## Screenshots
 *Main Menu*
